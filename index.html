@@ -25,6 +25,8 @@ html,body{margin:0;width:100%;height:100%;overflow:hidden;touch-action:none;font
 .record-banner-anim{animation:banner-pop .4s cubic-bezier(.22,1,.36,1) forwards}
 @keyframes warning-flash{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.4;transform:scale(1.06)}}
 .boss-warning-anim{animation:warning-flash .4s infinite}
+@keyframes milestone-slide{0%{transform:translateY(-24px) scale(.9);opacity:0}18%{transform:translateY(0) scale(1.03);opacity:1}82%{transform:translateY(0) scale(1);opacity:1}100%{transform:translateY(-16px) scale(.95);opacity:0}}
+.milestone-anim{animation:milestone-slide 2.1s ease-in-out forwards}
 </style>
 </head>
 
@@ -44,6 +46,11 @@ html,body{margin:0;width:100%;height:100%;overflow:hidden;touch-action:none;font
   </div>
 
   <div class="flex items-center gap-2 pointer-events-auto">
+   <div id="plyBadge" class="bg-indigo-50/95 border-2 border-indigo-300 rounded-2xl px-2.5 py-1.5 text-center shadow-sm">
+    <div class="text-[10px] font-bold text-indigo-500 leading-none">紙の厚さ</div>
+    <div id="plyText" class="text-xs font-black text-indigo-800 mt-0.5">2枚重ね</div>
+   </div>
+
    <div class="bg-amber-50/95 border-2 border-amber-300 rounded-2xl px-3 py-1.5 text-right shadow-sm">
     <div class="text-[10px] font-bold text-amber-600">1位記録</div>
     <div class="text-sm font-extrabold text-amber-800">
@@ -84,6 +91,10 @@ html,body{margin:0;width:100%;height:100%;overflow:hidden;touch-action:none;font
   </div>
  </div>
 
+ <div id="milestoneBanner" class="hidden self-center bg-gradient-to-r from-amber-400 via-pink-500 to-sky-500 text-white border-2 border-white rounded-full px-5 py-1.5 shadow-lg font-black text-xs tracking-wide">
+  🎊 <span id="milestoneText">100m 突破！</span>
+ </div>
+
  <div id="invincibleBadge" class="hidden self-center bg-gradient-to-r from-pink-500 via-purple-500 to-sky-500 text-white border-2 border-white rounded-full px-5 py-1.5 shadow-lg font-black text-sm">
   🌈 無敵モード！ <span id="invincibleTimeDisplay">7.0</span>秒
  </div>
@@ -117,10 +128,9 @@ html,body{margin:0;width:100%;height:100%;overflow:hidden;touch-action:none;font
 
   <div class="bg-slate-50 rounded-2xl p-3 text-left text-[11px] text-slate-600 space-y-1.5 mb-3.5 border border-slate-200">
    <div>👆 <strong>左右にスライド</strong>して紙を誘導</div>
-   <div>⚠️ <strong>水たまり・ハサミ・猫の手・扇風機</strong>をよけよう！</div>
-   <div>💚 回復ロールで耐久度を回復！</div>
-   <div>🌟 <strong>無敵スター</strong>を取ると7秒間無敵！</div>
-   <div>🎁 <strong>ミステリーボックス</strong>から特別な能力をゲット！</div>
+   <div>🧻 <strong>2枚重ねスタート</strong>：1回ヒットを肩代わり＆耐久軽減！</div>
+   <div>⚡ 障害物の<strong>ギリギリすり抜け</strong>でボーナス！</div>
+   <div>🎊 距離の節目で<strong>マイルストーン＆背景変化</strong>！</div>
    <div>✂️ <strong>1,000m突破で巨大ボス</strong>が襲来！</div>
   </div>
 
@@ -484,6 +494,25 @@ class SoundFX {
   o.stop(now+.22);
  }
 
+ playMilestone(){
+  if(this.muted||!this.ctx)return;
+  const now=this.ctx.currentTime;
+  [587.33,783.99,987.77,1174.66].forEach((f,i)=>{
+   const t=now+i*.07;
+   const o=this.ctx.createOscillator();
+   const g=this.ctx.createGain();
+   o.type='triangle';
+   o.frequency.setValueAtTime(f,t);
+   g.gain.setValueAtTime(.001,t);
+   g.gain.linearRampToValueAtTime(.1,t+.015);
+   g.gain.exponentialRampToValueAtTime(.001,t+.25);
+   o.connect(g);
+   g.connect(this.ctx.destination);
+   o.start(t);
+   o.stop(t+.26);
+  });
+ }
+
  playWarning(){
   if(this.muted||!this.ctx)return;
 
@@ -719,6 +748,15 @@ let spawnTimer=.65;
 let tearPoint=null;
 let entryId=null;
 
+// 2枚重ね（ダブル）管理
+let plyCount=2;
+let nearMissCooldown=0;
+
+// マイルストーン管理
+const MILESTONES=[50,100,250,500,750,1000,1500,2000];
+let reachedMilestones=new Set();
+let milestoneTimer=0;
+
 let invincibleTime=0;
 let invincibleSparkleTimer=0;
 let rainbowHue=0;
@@ -804,6 +842,75 @@ function resize(){
  }
 }
 
+function setPly(newPly){
+ plyCount=Math.max(1,Math.min(2,newPly));
+ paper.width=plyCount===2?40:32;
+ const badge=$('plyBadge');
+ const text=$('plyText');
+ if(plyCount===2){
+  text.textContent='2枚重ね';
+  badge.className='bg-indigo-50/95 border-2 border-indigo-300 rounded-2xl px-2.5 py-1.5 text-center shadow-sm';
+  text.className='text-xs font-black text-indigo-800 mt-0.5';
+ }else{
+  text.textContent='1枚重ね';
+  badge.className='bg-slate-100/95 border-2 border-slate-300 rounded-2xl px-2.5 py-1.5 text-center shadow-sm';
+  text.className='text-xs font-extrabold text-slate-600 mt-0.5';
+ }
+}
+
+function absorbHitWithPly(x,y){
+ if(plyCount>1){
+  setPly(1);
+  durability=Math.max(durability,45);
+  sound.playTear();
+  floatText(x,y-35,'🛡️ 2枚目が身代わり！（1枚重ね）','#4f46e5');
+  for(let i=0;i<14;i++){
+   const a=Math.PI*2*i/14;
+   particles.push({
+    x,y,
+    vx:Math.cos(a)*(70+Math.random()*90),
+    vy:Math.sin(a)*(70+Math.random()*90),
+    size:5+Math.random()*6,
+    rot:Math.random()*6.28,
+    vr:6,
+    life:.6+Math.random()*.4,
+    color:'#e0e7ff'
+   });
+  }
+  updateHUD();
+  return true;
+ }
+ return false;
+}
+
+function triggerMilestone(m){
+ reachedMilestones.add(m);
+ milestoneTimer=2.1;
+ sound.playMilestone();
+ $('milestoneText').textContent=`${m}m 突破！${m>=500?'すごい記録！':'ナイスラン！'}`;
+ const el=$('milestoneBanner');
+ el.classList.remove('hidden','milestone-anim');
+ void el.offsetWidth;
+ el.classList.add('milestone-anim');
+}
+
+function applyBackgroundTheme(){
+ const body=document.body;
+ body.classList.remove('bg-[#f0f9ff]','bg-amber-50','bg-slate-900','bg-fuchsia-50');
+ if(distance>=1000){
+  body.style.backgroundColor='#fdf2f8';
+  body.style.backgroundImage='linear-gradient(to right,rgba(244,114,182,.25) 1px,transparent 1px),linear-gradient(to bottom,rgba(168,85,247,.25) 1px,transparent 1px)';
+ }else if(distance>=500){
+  body.style.backgroundColor='#0f172a';
+  body.style.backgroundImage='linear-gradient(to right,rgba(56,189,248,.16) 1px,transparent 1px),linear-gradient(to bottom,rgba(56,189,248,.16) 1px,transparent 1px)';
+ }else if(distance>=200){
+  body.style.backgroundColor='#fff7ed';
+  body.style.backgroundImage='linear-gradient(to right,rgba(251,146,60,.28) 1px,transparent 1px),linear-gradient(to bottom,rgba(251,146,60,.28) 1px,transparent 1px)';
+ }else{
+  body.style.backgroundColor='#f0f9ff';
+  body.style.backgroundImage='linear-gradient(to right,rgba(186,230,253,.55) 1px,transparent 1px),linear-gradient(to bottom,rgba(186,230,253,.55) 1px,transparent 1px)';
+ }
+}
 function startGame(){
  sound.init();
  sound.stopBGM(true);
@@ -815,6 +922,11 @@ function startGame(){
  speed=230;
  durability=100;
  rollRadius=38;
+ nearMissCooldown=0;
+ reachedMilestones=new Set();
+ milestoneTimer=0;
+ applyBackgroundTheme();
+ setPly(2);
 
  invincibleTime=0;
  invincibleSparkleTimer=0;
@@ -842,6 +954,7 @@ function startGame(){
  };
  $('bossHud').classList.add('hidden');
  $('bossWarningOverlay').classList.add('hidden');
+ $('milestoneBanner').classList.add('hidden');
 
  entities=[];
  particles=[];
@@ -942,10 +1055,11 @@ function defeatBoss(){
 
  distance+=150;
  durability=100;
+ setPly(2);
  sound.playFanfare(true);
 
  floatText(boss.x,boss.y-40,'🎉 巨大ハサミ大王 撃破！！','#facc15');
- floatText(paper.x,paper.y-40,'+150.0m ＆ 耐久全回復！','#10b981');
+ floatText(paper.x,paper.y-40,'+150.0m ＆ 2枚重ね＆全回復！','#10b981');
 
  for(let i=0;i<60;i++){
   const a=Math.PI*2*i/60;
@@ -971,11 +1085,13 @@ function rankTitle(m){
  if(m<1000)return'称号：次元を超えたロール賢者';
  return'称号：巨大ハサミを討伐せし無限ペーパー神';
 }
+
 function tryRevive(x=paper.x,y=paper.y){
  if(!reviveAvailable)return false;
 
  reviveAvailable=false;
  durability=50;
+ setPly(2);
 
  invincibleTime=2.5;
  invincibleSparkleTimer=0;
@@ -986,7 +1102,7 @@ function tryRevive(x=paper.x,y=paper.y){
 
  sound.playStar();
  floatText(x,y-55,'❤️ 復活！！','#f43f5e');
- floatText(x,y-82,'🌈 2.5秒間 無敵！','#a855f7');
+ floatText(x,y-82,'🌈 2.5秒間 無敵＆2枚重ね！','#a855f7');
 
  for(let i=0;i<36;i++){
   const a=Math.PI*2*i/36;
@@ -1334,12 +1450,11 @@ function updateBoss(gameDt){
     boss.state='RECOVER';
     boss.stateTimer=1.0;
    }
-  }else{
+  }else if(!absorbHitWithPly(paper.x,paper.y)){
    gameOver('チョキン！！巨大ハサミ大王に切り裂かれた！',paper.x,paper.y);
   }
  }
 }
-
 function update(dt){
 
  for(let i=particles.length-1;i>=0;i--){
@@ -1361,6 +1476,13 @@ function update(dt){
   if(floating[i].life<=0)floating.splice(i,1);
  }
 
+ if(milestoneTimer>0){
+  milestoneTimer-=dt;
+  if(milestoneTimer<=0){
+   $('milestoneBanner').classList.add('hidden');
+  }
+ }
+
  if(state!=='PLAYING'){
   if(state==='START')rollAngle+=1.2*dt;
   return;
@@ -1368,6 +1490,7 @@ function update(dt){
 
  slowTime=Math.max(0,slowTime-dt);
  magnetTime=Math.max(0,magnetTime-dt);
+ nearMissCooldown=Math.max(0,nearMissCooldown-dt);
 
  const gameDt=dt*(slowTime>0?.5:1);
 
@@ -1405,6 +1528,13 @@ function update(dt){
 
  rollRadius=Math.max(18,38-distance*.08);
 
+ for(const m of MILESTONES){
+  if(distance>=m&&!reachedMilestones.has(m)){
+   triggerMilestone(m);
+  }
+ }
+ applyBackgroundTheme();
+
  if(distance>=1000&&!boss.active&&!boss.defeated){
   startBossBattle();
  }
@@ -1426,11 +1556,12 @@ function update(dt){
 
  const absV=Math.abs(paper.vx);
  const stretch=Math.abs(paper.x-W/2)/(W*.5);
+ const plyDefense=plyCount===2?.65:1;
 
  if(invincibleTime<=0){
   if(absV>335){
    const excess=(absV-335)/460;
-   durability-=(30+excess*68)*gameDt;
+   durability-=(30+excess*68)*plyDefense*gameDt;
   }else{
    durability=Math.min(100,durability+(stretch>.75?5:11)*gameDt);
   }
@@ -1448,6 +1579,8 @@ function update(dt){
 
   if(tryRevive(paper.x,paper.y)){
    durability=50;
+  }else if(absorbHitWithPly(paper.x,paper.y)){
+   durability=55;
   }else{
    updateHUD();
    gameOver('ビリッ！急操作で紙がちぎれた！',paper.x,paper.y-30);
@@ -1510,7 +1643,7 @@ function update(dt){
 
    if(invincibleTime<=0&&Math.abs(e.y-paper.y)<48){
     paper.targetX+=(e.right?185:-185)*gameDt;
-    durability-=14*gameDt;
+    durability-=14*plyDefense*gameDt;
    }
   }
   else if(
@@ -1547,12 +1680,29 @@ function update(dt){
    p&&Math.hypot(p.x-e.x,p.y-e.y)<e.radius+paper.width*.36
   );
 
+  if(
+   !hit&&
+   !e.nearMissed&&
+   nearMissCooldown<=0&&
+   ['puddle','scissors','catpaw','boss_wave'].includes(e.type)&&
+   Math.abs(e.y-paper.y)<14
+  ){
+   const distEdge=Math.hypot(paper.x-e.x,paper.y-e.y)-(e.radius+paper.width*.36);
+   if(distEdge>0&&distEdge<20){
+    e.nearMissed=true;
+    nearMissCooldown=1.1;
+    distance+=1.0;
+    floatText(paper.x,paper.y-28,'⚡ ギリギリセーフ！ +1.0m','#0284c7');
+   }
+  }
+
   if(hit){
 
    if(e.type==='repair'){
     durability=Math.min(100,durability+35);
+    if(plyCount<2)setPly(2);
     sound.playItem(false);
-    floatText(e.x,e.y-10,'耐久 +35%!','#10b981');
+    floatText(e.x,e.y-10,'耐久 +35% ＆ 2枚重ね！','#10b981');
     entities.splice(i,1);
     continue;
    }
@@ -1602,6 +1752,11 @@ function update(dt){
     continue;
    }
 
+   if(absorbHitWithPly(e.x,e.y)){
+    entities.splice(i,1);
+    continue;
+   }
+
    if(e.type==='puddle'){
     gameOver('ビチャッ！水たまりでふやけた！',e.x,e.y);
     return;
@@ -1628,6 +1783,7 @@ function update(dt){
 
  updateHUD();
 }
+
 function updateHUD(){
  $('distanceDisplay').textContent=distance.toFixed(1);
 
@@ -1876,6 +2032,24 @@ function drawRibbon(){
  const danger=Math.max(0,(55-durability)/55);
 
  ctx.save();
+
+ if(plyCount===2){
+  ctx.beginPath();
+  paper.trail.forEach((p,i)=>{
+   if(i)ctx.lineTo(p.x-hw-3,p.y+4);
+   else ctx.moveTo(p.x-hw-3,p.y+4);
+  });
+  for(let i=paper.trail.length-1;i>=0;i--){
+   const p=paper.trail[i];
+   ctx.lineTo(p.x+hw+3,p.y+4);
+  }
+  ctx.closePath();
+  ctx.fillStyle='#e0e7ff';
+  ctx.fill();
+  ctx.lineWidth=1.5;
+  ctx.strokeStyle='#818cf8';
+  ctx.stroke();
+ }
 
  ctx.beginPath();
 
