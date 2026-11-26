@@ -1,131 +1,130 @@
+
 <!DOCTYPE html>
 <html lang="ja">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>トイレットペーパー・ロングラン</title>
-    <link rel="apple-touch-icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 180 180'><rect width='180' height='180' rx='40' fill='%23FF9AA2'/><rect x='45' y='45' width='90' height='75' rx='12' fill='%23FFFFFF'/><ellipse cx='90' cy='45' rx='45' ry='16' fill='%23F3F4F6'/><ellipse cx='90' cy='45' rx='18' ry='6' fill='%239CA3AF'/><path d='M45 95 L45 145 L135 145 L135 95 Z' fill='%23FFFFFF'/><circle cx='75' cy='82' r='4' fill='%23374151'/><circle cx='105' cy='82' r='4' fill='%23374151'/><path d='M84 88 Q90 94 96 88' stroke='%23374151' stroke-width='3' fill='none' stroke-linecap='round'/></svg>">
-    <script src="https://cdn.tailwindcss.com"></script>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=M+PLUS+Rounded+1c:wght@500;700;800;900&display=swap" rel="stylesheet">
-    <style>
-        * { box-sizing: border-box; user-select: none; -webkit-user-select: none; -webkit-touch-callout: none; }
-        html, body { margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden; touch-action: none; font-family: 'M PLUS Rounded 1c', sans-serif; background-color: #e0f2fe; }
-        #gameCanvas { touch-action: none; display: block; width: 100%; height: 100%; }
-        .bathroom-bg { background-color: #f0f9ff; background-image: linear-gradient(to right, rgba(186, 230, 253, 0.55) 1px, transparent 1px), linear-gradient(to bottom, rgba(186, 230, 253, 0.55) 1px, transparent 1px); background-size: 36px 36px; }
-        .btn-pop { transition: transform 0.1s ease, box-shadow 0.1s ease; box-shadow: 0 5px 0 #0284c7; }
-        .btn-pop:active { transform: translateY(4px); box-shadow: 0 1px 0 #0284c7; }
-        .btn-pop-green { transition: transform 0.1s ease, box-shadow 0.1s ease; box-shadow: 0 5px 0 #15803d; }
-        .btn-pop-green:active { transform: translateY(4px); box-shadow: 0 1px 0 #15803d; }
-        @keyframes pulse-fast { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.04); } }
-        .danger-pulse { animation: pulse-fast 0.35s infinite; }
-        @keyframes banner-pop { 0% { transform: scale(0.82); opacity: 0; } 70% { transform: scale(1.05); opacity: 1; } 100% { transform: scale(1); opacity: 1; } }
-        .record-banner-anim { animation: banner-pop 0.4s cubic-bezier(0.22, 1, 0.36, 1) forwards; }
-        @keyframes rainbow-glow {
-            0% { border-color: #f43f5e; box-shadow: 0 0 12px rgba(244, 63, 94, 0.5); }
-            25% { border-color: #f59e0b; box-shadow: 0 0 12px rgba(245, 158, 11, 0.5); }
-            50% { border-color: #10b981; box-shadow: 0 0 12px rgba(16, 185, 129, 0.5); }
-            75% { border-color: #3b82f6; box-shadow: 0 0 12px rgba(59, 130, 246, 0.5); }
-            100% { border-color: #a855f7; box-shadow: 0 0 12px rgba(168, 85, 247, 0.5); }
-        }
-        .star-hud-glow { animation: rainbow-glow 0.6s linear infinite; }
-    </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>トイレットペーパー・ロングラン</title>
+<script src="[https://cdn.tailwindcss.com](https://cdn.tailwindcss.com)"></script>
+<link rel="preconnect" href="[https://fonts.googleapis.com](https://fonts.googleapis.com)">
+<link rel="preconnect" href="[https://fonts.gstatic.com](https://fonts.gstatic.com)" crossorigin>
+<link href="[https://fonts.googleapis.com/css2?family=M+PLUS+Rounded+1c:wght@500;700;800;900&display=swap](https://fonts.googleapis.com/css2?family=M+PLUS+Rounded+1c:wght@500;700;800;900&display=swap)" rel="stylesheet">
+<style>
+* { box-sizing: border-box; user-select: none; -webkit-user-select: none; -webkit-touch-callout: none; }
+html, body { margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden; touch-action: none; font-family: 'M PLUS Rounded 1c', sans-serif; background-color: #e0f2fe; }
+#gameCanvas { touch-action: none; display: block; width: 100%; height: 100%; }
+.bathroom-bg { background-color: #f0f9ff; background-image: linear-gradient(to right, rgba(186, 230, 253, 0.55) 1px, transparent 1px), linear-gradient(to bottom, rgba(186, 230, 253, 0.55) 1px, transparent 1px); background-size: 36px 36px; }
+.btn-pop { transition: transform 0.1s ease, box-shadow 0.1s ease; box-shadow: 0 5px 0 #0284c7; }
+.btn-pop:active { transform: translateY(4px); box-shadow: 0 1px 0 #0284c7; }
+.btn-pop-green { transition: transform 0.1s ease, box-shadow 0.1s ease; box-shadow: 0 5px 0 #15803d; }
+.btn-pop-green:active { transform: translateY(4px); box-shadow: 0 1px 0 #15803d; }
+@keyframes pulse-fast { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.04); } }
+.danger-pulse { animation: pulse-fast 0.35s infinite; }
+@keyframes banner-pop { 0% { transform: scale(0.82); opacity: 0; } 70% { transform: scale(1.05); opacity: 1; } 100% { transform: scale(1); opacity: 1; } }
+.record-banner-anim { animation: banner-pop 0.4s cubic-bezier(0.22, 1, 0.36, 1) forwards; }
+@keyframes rainbow-glow {
+0% { border-color: #f43f5e; box-shadow: 0 0 12px rgba(244, 63, 94, 0.5); }
+50% { border-color: #10b981; box-shadow: 0 0 12px rgba(16, 185, 129, 0.5); }
+100% { border-color: #a855f7; box-shadow: 0 0 12px rgba(168, 85, 247, 0.5); }
+}
+.star-hud-glow { animation: rainbow-glow 0.6s linear infinite; }
+</style>
 </head>
 <body class="flex items-center justify-center bathroom-bg">
-    <div id="game-wrapper" class="relative w-full h-full max-w-md bg-white/85 shadow-2xl overflow-hidden flex flex-col border-x-2 border-sky-200">
-        <canvas id="gameCanvas"></canvas>
-        <div id="hud" class="hidden absolute top-0 left-0 w-full p-3 pointer-events-none flex flex-col gap-2 z-10">
-            <div class="flex items-start justify-between">
-                <div class="bg-white/95 backdrop-blur-sm border-2 border-sky-300 rounded-2xl px-3.5 py-1.5 shadow-sm">
-                    <div class="text-[11px] font-bold text-sky-600 leading-none">のばした長さ</div>
-                    <div class="text-2xl font-extrabold text-slate-800 tracking-tight"><span id="distanceDisplay">0.0</span><span class="text-sm font-bold ml-0.5 text-sky-600">m</span></div>
-                </div>
-                <div class="flex items-center gap-2 pointer-events-auto">
-                    <div class="bg-amber-50/95 border-2 border-amber-300 rounded-2xl px-3 py-1.5 text-right shadow-sm">
-                        <div class="text-[10px] font-bold text-amber-600 leading-none">1位記録</div>
-                        <div class="text-sm font-extrabold text-amber-800"><span id="hudBestDisplay">0.0</span>m</div>
-                    </div>
-                    <button id="soundToggleBtn" type="button" aria-label="音声切り替え" class="w-10 h-10 bg-white/95 border-2 border-sky-300 rounded-full flex items-center justify-center text-sky-600 shadow-sm active:scale-95">
-                        <svg id="soundOnIcon" xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon><path d="M15.54 8.46a5 5 0 0 1 0 7.07"></path><path d="M19.07 4.93a10 10 0 0 1 0 14.14"></path></svg>
-                        <svg id="soundOffIcon" xmlns="http://www.w3.org/2000/svg" class="w-5 h-5 hidden text-slate-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon><line x1="23" y1="9" x2="17" y2="15"></line><line x1="17" y1="9" x2="23" y2="15"></line></svg>
-                    </button>
-                </div>
-            </div>
-            <div id="tensionContainer" class="bg-white/95 backdrop-blur-sm border-2 border-sky-200 rounded-2xl px-3 py-1.5 shadow-sm transition-colors">
-                <div class="flex justify-between items-center text-xs font-bold mb-1">
-                    <span id="tensionLabel" class="text-slate-600 flex items-center gap-1">🧻 紙の耐久度（ちぎれ注意・急操作NG！）</span>
-                    <span id="tensionPercent" class="text-sky-600 font-extrabold">100%</span>
-                </div>
-                <div class="w-full h-3 bg-slate-200 rounded-full overflow-hidden p-0.5">
-                    <div id="tensionBar" class="h-full w-full bg-gradient-to-r from-emerald-400 to-sky-400 rounded-full transition-all duration-75"></div>
-                </div>
-            </div>
-        </div>
-        <div id="touchHint" class="hidden absolute bottom-7 left-0 w-full flex justify-center pointer-events-none z-10">
-            <div class="bg-slate-800/80 text-white text-xs font-bold px-4 py-2 rounded-full backdrop-blur-sm animate-bounce">👆 左右にやさしくスライドして紙を伸ばそう！</div>
-        </div>
-        <div id="startScreen" class="absolute inset-0 bg-sky-900/35 backdrop-blur-[2px] flex flex-col items-center justify-center p-4 z-20 overflow-y-auto">
-            <div class="bg-white rounded-3xl p-5 w-full max-w-sm shadow-xl border-4 border-sky-200 text-center my-auto">
-                <div class="inline-block bg-sky-100 text-sky-700 text-[11px] font-extrabold px-3 py-0.5 rounded-full mb-1.5">ちぎれたら即終了！スリルアクション</div>
-                <h1 class="text-2xl font-black text-slate-800 leading-tight mb-0.5">トイレットペーパー<br><span class="text-sky-500">ロングラン！</span></h1>
-                <p class="text-[11px] text-slate-500 font-bold mb-3">どこまで切らずに伸ばせるかな？</p>
-                <div class="bg-slate-50 rounded-2xl p-3 text-left text-[11px] text-slate-600 space-y-1.5 mb-3.5 border border-slate-200">
-                    <div class="flex items-start gap-2"><span class="text-sm leading-none">👆</span><span><strong>左右にスライド</strong>して紙を誘導（急な横移動は「ちぎれ注意」！）</span></div>
-                    <div class="flex items-start gap-2"><span class="text-sm leading-none">🌟</span><span><strong>無敵スター</strong>を取るとレインボー無敵化！障害物を吹き飛ばせる！</span></div>
-                </div>
-                <div class="bg-amber-50/80 border-2 border-amber-200 rounded-2xl p-3 mb-4 text-left">
-                    <div class="flex items-center justify-between mb-2">
-                        <span class="text-xs font-extrabold text-amber-800 flex items-center gap-1">🏆 マイベスト TOP 5</span>
-                        <button type="button" data-reset-trigger class="text-[10px] font-bold text-slate-500 hover:text-rose-600 bg-white/90 border border-slate-200 rounded-lg px-2 py-0.5 transition cursor-pointer">リセット</button>
-                    </div>
-                    <div id="startRankingList" class="space-y-1 text-xs"></div>
-                </div>
-                <button id="startBtn" type="button" class="w-full py-3.5 bg-sky-500 hover:bg-sky-400 text-white font-extrabold text-lg rounded-2xl btn-pop cursor-pointer">🧻 ゲームスタート！</button>
-            </div>
-        </div>
-        <div id="gameOverScreen" class="hidden absolute inset-0 bg-slate-900/50 backdrop-blur-[2px] flex flex-col items-center justify-center p-4 z-20 overflow-y-auto">
-            <div class="bg-white rounded-3xl p-5 w-full max-w-sm shadow-2xl border-4 border-rose-200 text-center my-auto">
-                <div id="failReasonBadge" class="inline-block bg-rose-100 text-rose-600 text-[11px] font-extrabold px-3 py-0.5 rounded-full mb-1.5">ビリッ！紙がちぎれてしまった！</div>
-                <h2 class="text-xl font-black text-slate-800 mb-2">記録発表</h2>
-                <div id="recordBanner" class="hidden mb-2.5 py-1.5 px-3 rounded-2xl font-extrabold text-xs record-banner-anim"></div>
-                <div class="bg-sky-50 border-2 border-sky-200 rounded-2xl py-2.5 px-4 mb-2.5">
-                    <div class="text-[11px] font-bold text-sky-600 leading-none mb-0.5">今回伸ばした長さ</div>
-                    <div class="text-3xl font-black text-slate-800"><span id="finalDistance">0.0</span><span class="text-base font-bold text-sky-600 ml-0.5">m</span></div>
-                    <p id="rankComment" class="text-[11px] font-bold text-slate-600 mt-1">称号：新人ペーパー職人</p>
-                </div>
-                <div class="bg-amber-50/80 border-2 border-amber-200 rounded-2xl p-3 mb-3.5 text-left">
-                    <div class="flex items-center justify-between mb-1.5">
-                        <span class="text-xs font-extrabold text-amber-800 flex items-center gap-1">🏆 マイベスト TOP 5</span>
-                        <button type="button" data-reset-trigger class="text-[10px] font-bold text-slate-500 hover:text-rose-600 bg-white/90 border border-slate-200 rounded-lg px-2 py-0.5 transition cursor-pointer">リセット</button>
-                    </div>
-                    <div id="gameOverRankingList" class="space-y-1 text-xs"></div>
-                </div>
-                <div class="flex flex-col gap-2">
-                    <button id="retryBtn" type="button" class="w-full py-3 bg-emerald-500 hover:bg-emerald-400 text-white font-extrabold text-base rounded-2xl btn-pop-green cursor-pointer">🔄 もう一度挑戦する</button>
-                    <button id="shareBtn" type="button" class="w-full py-2 bg-sky-100 hover:bg-sky-200 text-sky-700 font-extrabold text-xs rounded-2xl transition active:scale-95 cursor-pointer">📋 結果をコピーしてシェア</button>
-                </div>
-            </div>
-        </div>
-        <div id="resetConfirmModal" class="hidden absolute inset-0 bg-slate-900/60 backdrop-blur-[2px] flex items-center justify-center p-5 z-30">
-            <div class="bg-white rounded-3xl p-5 w-full max-w-xs shadow-2xl border-2 border-rose-200 text-center">
-                <div class="text-2xl mb-1">🗑️</div>
-                <h3 class="text-base font-extrabold text-slate-800 mb-1">ランキングをリセットしますか？</h3>
-                <p class="text-xs text-slate-500 font-bold mb-4">保存されているTOP 5の記録がすべて消去されます。</p>
-                <div class="flex gap-2.5">
-                    <button id="cancelResetBtn" type="button" class="flex-1 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-extrabold text-xs rounded-xl cursor-pointer">キャンセル</button>
-                    <button id="confirmResetBtn" type="button" class="flex-1 py-2.5 bg-rose-500 hover:bg-rose-600 text-white font-extrabold text-xs rounded-xl shadow-sm cursor-pointer">リセットする</button>
-                </div>
-            </div>
-        </div>
-        <div id="toastMsg" class="hidden absolute bottom-6 left-1/2 -translate-x-1/2 bg-slate-800/90 text-white text-xs font-bold px-4 py-2.5 rounded-full shadow-lg z-40 whitespace-nowrap">クリップボードにコピーしました！</div>
-    </div>
+<div id="game-wrapper" class="relative w-full h-full max-w-md bg-white/85 shadow-2xl overflow-hidden flex flex-col border-x-2 border-sky-200">
+<canvas id="gameCanvas"></canvas>
+<div id="hud" class="hidden absolute top-0 left-0 w-full p-3 pointer-events-none flex flex-col gap-2 z-10">
+<div class="flex items-start justify-between">
+<div class="bg-white/95 backdrop-blur-sm border-2 border-sky-300 rounded-2xl px-3.5 py-1.5 shadow-sm">
+<div class="text-[11px] font-bold text-sky-600 leading-none">のばした長さ</div>
+<div class="text-2xl font-extrabold text-slate-800 tracking-tight"><span id="distanceDisplay">0.0</span><span class="text-sm font-bold ml-0.5 text-sky-600">m</span></div>
+</div>
+<div class="flex items-center gap-2 pointer-events-auto">
+<div class="bg-amber-50/95 border-2 border-amber-300 rounded-2xl px-3 py-1.5 text-right shadow-sm">
+<div class="text-[10px] font-bold text-amber-600 leading-none">1位記録</div>
+<div class="text-sm font-extrabold text-amber-800"><span id="hudBestDisplay">0.0</span>m</div>
+</div>
+<button id="soundToggleBtn" type="button" aria-label="音声切り替え" class="w-10 h-10 bg-white/95 border-2 border-sky-300 rounded-full flex items-center justify-center text-sky-600 shadow-sm active:scale-95">
+<svg id="soundOnIcon" xmlns="[http://www.w3.org/2000/svg](http://www.w3.org/2000/svg)" class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon><path d="M15.54 8.46a5 5 0 0 1 0 7.07"></path><path d="M19.07 4.93a10 10 0 0 1 0 14.14"></path></svg>
+<svg id="soundOffIcon" xmlns="[http://www.w3.org/2000/svg](http://www.w3.org/2000/svg)" class="w-5 h-5 hidden text-slate-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon><line x1="23" y1="9" x2="17" y2="15"></line><line x1="17" y1="9" x2="23" y2="15"></line></svg>
+</button>
+</div>
+</div>
+<div id="tensionContainer" class="bg-white/95 backdrop-blur-sm border-2 border-sky-200 rounded-2xl px-3 py-1.5 shadow-sm transition-colors">
+<div class="flex justify-between items-center text-xs font-bold mb-1">
+<span id="tensionLabel" class="text-slate-600 flex items-center gap-1">🧻 紙の耐久度（ちぎれ注意・急操作NG！）</span>
+<span id="tensionPercent" class="text-sky-600 font-extrabold">100%</span>
+</div>
+<div class="w-full h-3 bg-slate-200 rounded-full overflow-hidden p-0.5">
+<div id="tensionBar" class="h-full w-full bg-gradient-to-r from-emerald-400 to-sky-400 rounded-full transition-all duration-75"></div>
+</div>
+</div>
+</div>
+<div id="touchHint" class="hidden absolute bottom-7 left-0 w-full flex justify-center pointer-events-none z-10">
+<div class="bg-slate-800/80 text-white text-xs font-bold px-4 py-2 rounded-full backdrop-blur-sm animate-bounce">👆 左右にやさしくスライドして紙を伸ばそう！</div>
+</div>
+<div id="startScreen" class="absolute inset-0 bg-sky-900/35 backdrop-blur-[2px] flex flex-col items-center justify-center p-4 z-20 overflow-y-auto">
+<div class="bg-white rounded-3xl p-5 w-full max-w-sm shadow-xl border-4 border-sky-200 text-center my-auto">
+<div class="inline-block bg-sky-100 text-sky-700 text-[11px] font-extrabold px-3 py-0.5 rounded-full mb-1.5">ちぎれたら即終了！スリルアクション</div>
+<h1 class="text-2xl font-black text-slate-800 leading-tight mb-0.5">トイレットペーパー
+<span class="text-sky-500">ロングラン！</span></h1>
+<p class="text-[11px] text-slate-500 font-bold mb-3">どこまで切らずに伸ばせるかな？</p>
+<div class="bg-slate-50 rounded-2xl p-3 text-left text-[11px] text-slate-600 space-y-1.5 mb-3.5 border border-slate-200">
+<div class="flex items-start gap-2"><span class="text-sm leading-none">👆</span><span><strong>左右にスライド</strong>して紙を誘導（急な横移動は「ちぎれ注意」！）</span></div>
+<div class="flex items-start gap-2"><span class="text-sm leading-none">🌟</span><span><strong>無敵スター</strong>でレインボー無敵化！障害物を吹き飛ばせる！</span></div>
+</div>
+<div class="bg-amber-50/80 border-2 border-amber-200 rounded-2xl p-3 mb-4 text-left">
+<div class="flex items-center justify-between mb-2">
+<span class="text-xs font-extrabold text-amber-800 flex items-center gap-1">🏆 マイベスト TOP 5</span>
+<button type="button" data-reset-trigger class="text-[10px] font-bold text-slate-500 hover:text-rose-600 bg-white/90 border border-slate-200 rounded-lg px-2 py-0.5 transition cursor-pointer">リセット</button>
+</div>
+<div id="startRankingList" class="space-y-1 text-xs"></div>
+</div>
+<button id="startBtn" type="button" class="w-full py-3.5 bg-sky-500 hover:bg-sky-400 text-white font-extrabold text-lg rounded-2xl btn-pop cursor-pointer">🧻 ゲームスタート！</button>
+</div>
+</div>
+<div id="gameOverScreen" class="hidden absolute inset-0 bg-slate-900/50 backdrop-blur-[2px] flex flex-col items-center justify-center p-4 z-20 overflow-y-auto">
+<div class="bg-white rounded-3xl p-5 w-full max-w-sm shadow-2xl border-4 border-rose-200 text-center my-auto">
+<div id="failReasonBadge" class="inline-block bg-rose-100 text-rose-600 text-[11px] font-extrabold px-3 py-0.5 rounded-full mb-1.5">ビリッ！紙がちぎれてしまった！</div>
+<h2 class="text-xl font-black text-slate-800 mb-2">記録発表</h2>
+<div id="recordBanner" class="hidden mb-2.5 py-1.5 px-3 rounded-2xl font-extrabold text-xs record-banner-anim"></div>
+<div class="bg-sky-50 border-2 border-sky-200 rounded-2xl py-2.5 px-4 mb-2.5">
+<div class="text-[11px] font-bold text-sky-600 leading-none mb-0.5">今回伸ばした長さ</div>
+<div class="text-3xl font-black text-slate-800"><span id="finalDistance">0.0</span><span class="text-base font-bold text-sky-600 ml-0.5">m</span></div>
+<p id="rankComment" class="text-[11px] font-bold text-slate-600 mt-1">称号：新人ペーパー職人</p>
+</div>
+<div class="bg-amber-50/80 border-2 border-amber-200 rounded-2xl p-3 mb-3.5 text-left">
+<div class="flex items-center justify-between mb-1.5">
+<span class="text-xs font-extrabold text-amber-800 flex items-center gap-1">🏆 マイベスト TOP 5</span>
+<button type="button" data-reset-trigger class="text-[10px] font-bold text-slate-500 hover:text-rose-600 bg-white/90 border border-slate-200 rounded-lg px-2 py-0.5 transition cursor-pointer">リセット</button>
+</div>
+<div id="gameOverRankingList" class="space-y-1 text-xs"></div>
+</div>
+<div class="flex flex-col gap-2">
+<button id="retryBtn" type="button" class="w-full py-3 bg-emerald-500 hover:bg-emerald-400 text-white font-extrabold text-base rounded-2xl btn-pop-green cursor-pointer">🔄 もう一度挑戦する</button>
+<button id="shareBtn" type="button" class="w-full py-2 bg-sky-100 hover:bg-sky-200 text-sky-700 font-extrabold text-xs rounded-2xl transition active:scale-95 cursor-pointer">📋 結果をコピーしてシェア</button>
+</div>
+</div>
+</div>
+<div id="resetConfirmModal" class="hidden absolute inset-0 bg-slate-900/60 backdrop-blur-[2px] flex items-center justify-center p-5 z-30">
+<div class="bg-white rounded-3xl p-5 w-full max-w-xs shadow-2xl border-2 border-rose-200 text-center">
+<div class="text-2xl mb-1">🗑️</div>
+<h3 class="text-base font-extrabold text-slate-800 mb-1">ランキングをリセットしますか？</h3>
+<p class="text-xs text-slate-500 font-bold mb-4">保存されているTOP 5の記録がすべて消去されます。</p>
+<div class="flex gap-2.5">
+<button id="cancelResetBtn" type="button" class="flex-1 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-extrabold text-xs rounded-xl cursor-pointer">キャンセル</button>
+<button id="confirmResetBtn" type="button" class="flex-1 py-2.5 bg-rose-500 hover:bg-rose-600 text-white font-extrabold text-xs rounded-xl shadow-sm cursor-pointer">リセットする</button>
+</div>
+</div>
+</div>
+<div id="toastMsg" class="hidden absolute bottom-6 left-1/2 -translate-x-1/2 bg-slate-800/90 text-white text-xs font-bold px-4 py-2.5 rounded-full shadow-lg z-40 whitespace-nowrap">クリップボードにコピーしました！</div>
+</div>
+
 <script>
 class SoundFX {
 constructor() {
 this.ctx = null; this.muted = false; this.lastRollTick = 0; this.lastWindTime = 0;
-this.bgmMode = 'NONE';
-this.bgmTimer = null; this.bgmStep = 0; this.speedRatio = 0;
+this.bgmMode = 'NONE'; this.bgmTimer = null; this.bgmStep = 0; this.speedRatio = 0;
 }
 init() {
 try {
@@ -175,14 +174,8 @@ stepFn();
 startStarBgm() {
 this.init(); this.bgmMode = 'STAR'; this.stopBgmTimerOnly();
 if (this.muted || !this.ctx) return;
-const starMel = [
-523.25, 523.25, 523.25, 440.00, 523.25, 0, 523.25, 440.00,
-493.88, 493.88, 493.88, 392.00, 493.88, 0, 493.88, 392.00
-];
-const starBass = [
-130.81, 196.00, 261.63, 196.00, 130.81, 196.00, 261.63, 196.00,
-123.47, 196.00, 246.94, 196.00, 123.47, 196.00, 246.94, 196.00
-];
+const starMel = [523.25, 523.25, 523.25, 440.00, 523.25, 0, 523.25, 440.00, 493.88, 493.88, 493.88, 392.00, 493.88, 0, 493.88, 392.00];
+const starBass = [130.81, 196.00, 261.63, 196.00, 130.81, 196.00, 261.63, 196.00, 123.47, 196.00, 246.94, 196.00, 123.47, 196.00, 246.94, 196.00];
 let sStep = 0;
 const stepFn = () => {
 if (this.muted || this.bgmMode !== 'STAR' || !this.ctx) return;
@@ -346,6 +339,7 @@ row.appendChild(l); row.appendChild(r); c.appendChild(row);
 }
 });
 }
+
 const canvas = document.getElementById('gameCanvas'), ctx = canvas.getContext('2d'), wrapper = document.getElementById('game-wrapper');
 const hud = document.getElementById('hud'), distanceDisplay = document.getElementById('distanceDisplay'), hudBestDisplay = document.getElementById('hudBestDisplay');
 const tensionBar = document.getElementById('tensionBar'), tensionPercent = document.getElementById('tensionPercent'), tensionContainer = document.getElementById('tensionContainer'), tensionLabel = document.getElementById('tensionLabel'), touchHint = document.getElementById('touchHint');
@@ -357,9 +351,8 @@ const confirmResetBtn = document.getElementById('confirmResetBtn'), cancelResetB
 const soundToggleBtn = document.getElementById('soundToggleBtn'), soundOnIcon = document.getElementById('soundOnIcon'), soundOffIcon = document.getElementById('soundOffIcon');
 let rankingList = loadRanking(), lastRecordedEntryId = null, width = 0, height = 0, dpr = 1;
 let gameState = 'START', distance = 0, speed = 230, rollAngle = 0, rollRadius = 38, durability = 100, lastWarningTime = 0;
-let starTimer = 0;
+let starTimer = 0, rainbowHue = 0;
 const STAR_DURATION = 7.0;
-let rainbowHue = 0;
 const paper = { x: 0, y: 0, targetX: 0, vx: 0, width: 34, trail: [] };
 const input = { isPointerDown: false, lastPointerX: 0, leftPressed: false, rightPressed: false };
 let entities = [], particles = [], floatingTexts = [], spawnTimer = 0, lastTime = 0, tearPoint = null;
@@ -396,8 +389,7 @@ if (!wasStar) sound.startStarBgm();
 addFloatingText(paper.x, paper.y - 25, '🌟 無敵レインボーモード!!', '#eab308');
 for (let i = 0; i < 18; i++) {
 particles.push({
-x: paper.x, y: paper.y,
-vx: (Math.random() - 0.5) * 240, vy: (Math.random() - 0.5) * 240,
+x: paper.x, y: paper.y, vx: (Math.random() - 0.5) * 240, vy: (Math.random() - 0.5) * 240,
 size: 7 + Math.random() * 5, rot: Math.random() * Math.PI * 2, vRot: 8,
 color: hsl(${Math.random() * 360}, 95%, 60%), life: 0.75, isStar: true
 });
@@ -500,17 +492,11 @@ const pts = [{ x: paper.x, y: paper.y }, paper.trail[Math.floor(paper.trail.leng
 let hit = false;
 for (const pt of pts) { if (pt && Math.hypot(pt.x - e.x, pt.y - e.y) < e.radius + paper.width * 0.36) { hit = true; break; } }
 if (hit) {
-if (e.type === 'star') {
-activateStarMode();
-entities.splice(i, 1);
-continue;
-}
+if (e.type === 'star') { activateStarMode(); entities.splice(i, 1); continue; }
 if (e.type === 'repair') { durability = Math.min(100, durability + 35); sound.playItem(false); addFloatingText(e.x, e.y - 10, '耐久 +35%!', '#10b981'); entities.splice(i, 1); continue; }
 if (e.type === 'gold') { distance += 5.0; durability = Math.min(100, durability + 20); sound.playItem(true); addFloatingText(e.x, e.y - 10, '+5.0m ボーナス!', '#f59e0b'); entities.splice(i, 1); continue; }
 if (isStar && (e.type === 'puddle' || e.type === 'scissors' || e.type === 'catpaw' || e.type === 'fan')) {
-distance += 1.0;
-sound.playSmash();
-addFloatingText(e.x, e.y - 10, '💥 撃破 +1.0m!', '#ec4899');
+distance += 1.0; sound.playSmash(); addFloatingText(e.x, e.y - 10, '💥 撃破 +1.0m!', '#ec4899');
 for (let k = 0; k < 10; k++) {
 particles.push({
 x: e.x, y: e.y, vx: (Math.random() - 0.5) * 280, vy: -80 - Math.random() * 180,
@@ -518,8 +504,7 @@ size: 6 + Math.random() * 5, rot: Math.random() * 6, vRot: 9,
 color: hsl(${(rainbowHue + k * 36) % 360}, 90%, 60%), life: 0.65, isStar: true
 });
 }
-entities.splice(i, 1);
-continue;
+entities.splice(i, 1); continue;
 }
 if (e.type === 'puddle') { triggerGameOver('ビチャッ！水たまりでふやけた！', e.x, e.y); return; }
 if (e.type === 'scissors') { triggerGameOver('チョキン！ハサミで切られた！', e.x, e.y); return; }
@@ -564,12 +549,10 @@ particles.forEach(p => {
 ctx.save(); ctx.translate(p.x, p.y); ctx.rotate(p.rot);
 ctx.fillStyle = p.color;
 if (p.isStar) {
-drawStarShape(ctx, 0, 0, 5, p.size, p.size * 0.45);
-ctx.fill();
+drawStarShape(ctx, 0, 0, 5, p.size, p.size * 0.45); ctx.fill();
 } else {
 ctx.strokeStyle = '#cbd5e1'; ctx.lineWidth = 1;
-ctx.fillRect(-p.size / 2, -p.size / 2, p.size, p.size * 0.7);
-ctx.strokeRect(-p.size / 2, -p.size / 2, p.size, p.size * 0.7);
+ctx.fillRect(-p.size / 2, -p.size / 2, p.size, p.size * 0.7); ctx.strokeRect(-p.size / 2, -p.size / 2, p.size, p.size * 0.7);
 }
 ctx.restore();
 });
@@ -588,10 +571,7 @@ function drawPaperRibbon() {
 if (paper.trail.length < 2) return;
 const halfW = paper.width / 2, dangerRatio = Math.max(0, (55 - durability) / 55), isStar = starTimer > 0;
 ctx.save();
-if (isStar) {
-ctx.shadowColor = hsl(${rainbowHue}, 95%, 55%);
-ctx.shadowBlur = 16;
-}
+if (isStar) { ctx.shadowColor = hsl(${rainbowHue}, 95%, 55%); ctx.shadowBlur = 16; }
 ctx.beginPath();
 paper.trail.forEach((pt, i) => i === 0 ? ctx.moveTo(pt.x - halfW + 4, pt.y + 6) : ctx.lineTo(pt.x - halfW + 4, pt.y + 6));
 for (let i = paper.trail.length - 1; i >= 0; i--) ctx.lineTo(paper.trail[i].x + halfW + 4, paper.trail[i].y + 6);
@@ -603,16 +583,10 @@ for (let t = 0; t <= 5; t++) ctx.lineTo((tip.x - halfW) + (paper.width * (t / 5)
 for (let i = paper.trail.length - 1; i >= 0; i--) ctx.lineTo(paper.trail[i].x + halfW, paper.trail[i].y);
 ctx.closePath();
 if (isStar) {
-const topPt = paper.trail[0];
-const rbGrad = ctx.createLinearGradient(0, topPt.y, 0, tip.y);
-for (let s = 0; s <= 5; s++) {
-rbGrad.addColorStop(s / 5, hsl(${(rainbowHue + s * 60) % 360}, 95%, 78%));
-}
-ctx.fillStyle = rbGrad;
-ctx.fill();
-ctx.lineWidth = 2.5;
-ctx.strokeStyle = hsl(${(rainbowHue + 180) % 360}, 95%, 50%);
-ctx.stroke();
+const topPt = paper.trail[0], rbGrad = ctx.createLinearGradient(0, topPt.y, 0, tip.y);
+for (let s = 0; s <= 5; s++) rbGrad.addColorStop(s / 5, hsl(${(rainbowHue + s * 60) % 360}, 95%, 78%));
+ctx.fillStyle = rbGrad; ctx.fill();
+ctx.lineWidth = 2.5; ctx.strokeStyle = hsl(${(rainbowHue + 180) % 360}, 95%, 50%); ctx.stroke();
 } else {
 const c = Math.round(255 - dangerRatio * 145); ctx.fillStyle = rgb(255, ${c}, ${c}); ctx.fill();
 ctx.lineWidth = 2; ctx.strokeStyle = dangerRatio > 0.4 ? '#f43f5e' : '#cbd5e1'; ctx.stroke();
@@ -625,8 +599,7 @@ for (let i = 2; i < paper.trail.length - 1; i += 4) { const pt = paper.trail[i];
 ctx.setLineDash([]);
 ctx.beginPath(); ctx.arc(tip.x, tip.y - 6, 7, 0, Math.PI * 2);
 ctx.fillStyle = isStar ? hsla(${rainbowHue}, 95%, 55%, 0.45) : (dangerRatio > 0.4 ? 'rgba(244, 63, 94, 0.25)' : 'rgba(14, 165, 233, 0.22)');
-ctx.fill();
-ctx.restore();
+ctx.fill(); ctx.restore();
 }
 function drawTornPaper() {
 const halfW = paper.width / 2, topPt = paper.trail[0]; if (!topPt) return;
@@ -640,9 +613,7 @@ ctx.beginPath(); ctx.moveTo(cx - rollWidth / 2 - 12, cy - 26); ctx.lineTo(cx - r
 ctx.fillStyle = 'rgba(15, 23, 42, 0.1)'; ctx.beginPath(); ctx.roundRect(cx - rollWidth / 2 + 3, cy - r + 5, rollWidth, r * 2, 10); ctx.fill();
 const grad = ctx.createLinearGradient(0, cy - r, 0, cy + r);
 if (isStar) {
-grad.addColorStop(0, hsl(${rainbowHue}, 95%, 75%));
-grad.addColorStop(0.5, '#ffffff');
-grad.addColorStop(1, hsl(${(rainbowHue + 180) % 360}, 95%, 75%));
+grad.addColorStop(0, hsl(${rainbowHue}, 95%, 75%)); grad.addColorStop(0.5, '#ffffff'); grad.addColorStop(1, hsl(${(rainbowHue + 180) % 360}, 95%, 75%));
 } else {
 grad.addColorStop(0, '#e2e8f0'); grad.addColorStop(0.25, '#ffffff'); grad.addColorStop(0.75, '#f8fafc'); grad.addColorStop(1, '#cbd5e1');
 }
@@ -688,23 +659,12 @@ ctx.font = '800 10px "M PLUS Rounded 1c", sans-serif'; ctx.fillStyle = isG ? '#b
 } else if (e.type === 'star') {
 const sc = 1 + Math.sin(e.bob) * 0.14;
 ctx.scale(sc, sc);
-ctx.shadowColor = hsl(${rainbowHue}, 95%, 55%);
-ctx.shadowBlur = 12;
-ctx.fillStyle = 'rgba(255, 255, 255, 0.9)';
-ctx.strokeStyle = hsl(${rainbowHue}, 90%, 55%);
-ctx.lineWidth = 3;
+ctx.shadowColor = hsl(${rainbowHue}, 95%, 55%); ctx.shadowBlur = 12;
+ctx.fillStyle = 'rgba(255, 255, 255, 0.9)'; ctx.strokeStyle = hsl(${rainbowHue}, 90%, 55%); ctx.lineWidth = 3;
 ctx.beginPath(); ctx.arc(0, 0, e.radius, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
-ctx.save();
-ctx.rotate(Math.sin(e.spin) * 0.25);
-drawStarShape(ctx, 0, 0, 5, 15, 7);
-ctx.fillStyle = '#facc15';
-ctx.fill();
-ctx.lineWidth = 2;
-ctx.strokeStyle = '#ca8a04';
-ctx.stroke();
-ctx.fillStyle = '#1e293b';
-ctx.fillRect(-3.5, -3, 2, 4.5);
-ctx.fillRect(1.5, -3, 2, 4.5);
+ctx.save(); ctx.rotate(Math.sin(e.spin) * 0.25);
+drawStarShape(ctx, 0, 0, 5, 15, 7); ctx.fillStyle = '#facc15'; ctx.fill(); ctx.lineWidth = 2; ctx.strokeStyle = '#ca8a04'; ctx.stroke();
+ctx.fillStyle = '#1e293b'; ctx.fillRect(-3.5, -3, 2, 4.5); ctx.fillRect(1.5, -3, 2, 4.5);
 ctx.restore();
 }
 ctx.restore();
