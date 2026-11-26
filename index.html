@@ -22,6 +22,14 @@
         .danger-pulse { animation: pulse-fast 0.35s infinite; }
         @keyframes banner-pop { 0% { transform: scale(0.82); opacity: 0; } 70% { transform: scale(1.05); opacity: 1; } 100% { transform: scale(1); opacity: 1; } }
         .record-banner-anim { animation: banner-pop 0.4s cubic-bezier(0.22, 1, 0.36, 1) forwards; }
+        @keyframes rainbow-glow {
+            0% { border-color: #f43f5e; box-shadow: 0 0 12px rgba(244, 63, 94, 0.5); }
+            25% { border-color: #f59e0b; box-shadow: 0 0 12px rgba(245, 158, 11, 0.5); }
+            50% { border-color: #10b981; box-shadow: 0 0 12px rgba(16, 185, 129, 0.5); }
+            75% { border-color: #3b82f6; box-shadow: 0 0 12px rgba(59, 130, 246, 0.5); }
+            100% { border-color: #a855f7; box-shadow: 0 0 12px rgba(168, 85, 247, 0.5); }
+        }
+        .star-hud-glow { animation: rainbow-glow 0.6s linear infinite; }
     </style>
 </head>
 <body class="flex items-center justify-center bathroom-bg">
@@ -64,7 +72,7 @@
                 <p class="text-[11px] text-slate-500 font-bold mb-3">どこまで切らずに伸ばせるかな？</p>
                 <div class="bg-slate-50 rounded-2xl p-3 text-left text-[11px] text-slate-600 space-y-1.5 mb-3.5 border border-slate-200">
                     <div class="flex items-start gap-2"><span class="text-sm leading-none">👆</span><span><strong>左右にスライド</strong>して紙を誘導（急な横移動は「ちぎれ注意」！）</span></div>
-                    <div class="flex items-start gap-2"><span class="text-sm leading-none">⚠️</span><span><strong>水たまり・ハサミ・猫の手</strong>をよけ、<strong>回復・黄金ロール</strong>をゲット！</span></div>
+                    <div class="flex items-start gap-2"><span class="text-sm leading-none">🌟</span><span><strong>無敵スター</strong>を取るとレインボー無敵化！障害物を吹き飛ばせる！</span></div>
                 </div>
                 <div class="bg-amber-50/80 border-2 border-amber-200 rounded-2xl p-3 mb-4 text-left">
                     <div class="flex items-center justify-between mb-2">
@@ -112,416 +120,620 @@
         </div>
         <div id="toastMsg" class="hidden absolute bottom-6 left-1/2 -translate-x-1/2 bg-slate-800/90 text-white text-xs font-bold px-4 py-2.5 rounded-full shadow-lg z-40 whitespace-nowrap">クリップボードにコピーしました！</div>
     </div>
-    <script>
-        class SoundFX {
-            constructor() {
-                this.ctx = null; this.muted = false; this.lastRollTick = 0; this.lastWindTime = 0;
-                this.bgmMode = 'NONE'; this.bgmTimer = null; this.bgmStep = 0; this.speedRatio = 0;
-            }
-            init() {
-                try {
-                    if (!this.ctx) {
-                        const AudioCtx = window.AudioContext || window.webkitAudioContext;
-                        if (AudioCtx) this.ctx = new AudioCtx();
-                    }
-                    if (this.ctx && this.ctx.state === 'suspended') this.ctx.resume();
-                } catch (e) {}
-            }
-            toggleMute() {
-                this.muted = !this.muted;
-                if (this.muted) this.stopBgmTimerOnly();
-                else if (this.bgmMode === 'PLAYING') this.startPlayBgm();
-                return this.muted;
-            }
-            setSpeedRatio(r) { this.speedRatio = Math.max(0, Math.min(1, r || 0)); }
-            stopBgmTimerOnly() { if (this.bgmTimer) { clearTimeout(this.bgmTimer); this.bgmTimer = null; } }
-            stopBgm() { this.bgmMode = 'NONE'; this.stopBgmTimerOnly(); }
-            startPlayBgm() {
-                this.init(); this.bgmMode = 'PLAYING'; this.stopBgmTimerOnly();
-                if (this.muted || !this.ctx) return;
-                const melody = [523.25, 0, 659.25, 783.99, 880.00, 783.99, 659.25, 587.33, 523.25, 659.25, 587.33, 698.46, 783.99, 0, 659.25, 0];
-                const bass = [130.81, 0, 196.00, 0, 146.83, 0, 220.00, 0, 130.81, 0, 174.61, 0, 196.00, 0, 146.83, 0];
-                const stepFn = () => {
-                    if (this.muted || this.bgmMode !== 'PLAYING' || !this.ctx) return;
-                    if (this.ctx.state === 'suspended') this.ctx.resume();
-                    const now = this.ctx.currentTime;
-                    const i = this.bgmStep % melody.length;
-                    const dur = 0.225 - this.speedRatio * 0.032;
-                    if (melody[i] > 0) {
-                        const o = this.ctx.createOscillator(), g = this.ctx.createGain();
-                        o.type = 'triangle'; o.frequency.setValueAtTime(melody[i], now);
-                        g.gain.setValueAtTime(0.001, now); g.gain.linearRampToValueAtTime(0.055, now + 0.015); g.gain.exponentialRampToValueAtTime(0.001, now + dur * 0.9);
-                        o.connect(g); g.connect(this.ctx.destination); o.start(now); o.stop(now + dur);
-                    }
-                    if (bass[i] > 0) {
-                        const bo = this.ctx.createOscillator(), bg = this.ctx.createGain();
-                        bo.type = 'sine'; bo.frequency.setValueAtTime(bass[i], now);
-                        bg.gain.setValueAtTime(0.001, now); bg.gain.linearRampToValueAtTime(0.065, now + 0.015); bg.gain.exponentialRampToValueAtTime(0.001, now + dur * 1.3);
-                        bo.connect(bg); bg.connect(this.ctx.destination); bo.start(now); bo.stop(now + dur * 1.35);
-                    }
-                    this.bgmStep++; this.bgmTimer = setTimeout(stepFn, dur * 1000);
-                };
-                stepFn();
-            }
-            playRollTick(ratio) {
-                if (this.muted || !this.ctx) return;
-                try {
-                    const now = this.ctx.currentTime;
-                    if (now - this.lastRollTick < Math.max(0.06, 0.14 - ratio * 0.05)) return;
-                    this.lastRollTick = now;
-                    const o = this.ctx.createOscillator(), g = this.ctx.createGain();
-                    o.type = 'triangle'; o.frequency.setValueAtTime(220 + Math.random() * 55, now); o.frequency.exponentialRampToValueAtTime(95, now + 0.032);
-                    g.gain.setValueAtTime(0.022, now); g.gain.exponentialRampToValueAtTime(0.001, now + 0.032);
-                    o.connect(g); g.connect(this.ctx.destination); o.start(now); o.stop(now + 0.038);
-                } catch (e) {}
-            }
-            playWindWhoosh() {
-                if (this.muted || !this.ctx) return;
-                try {
-                    const now = this.ctx.currentTime;
-                    if (now - this.lastWindTime < 0.16) return;
-                    this.lastWindTime = now;
-                    const dur = 0.15, len = Math.floor(this.ctx.sampleRate * dur), buf = this.ctx.createBuffer(1, len, this.ctx.sampleRate), ch = buf.getChannelData(0);
-                    for (let i = 0; i < len; i++) ch[i] = (Math.random() * 2 - 1) * Math.sin((i / len) * Math.PI);
-                    const src = this.ctx.createBufferSource(); src.buffer = buf;
-                    const flt = this.ctx.createBiquadFilter(); flt.type = 'bandpass'; flt.frequency.setValueAtTime(520, now); flt.frequency.exponentialRampToValueAtTime(880, now + dur); flt.Q.setValueAtTime(2.5, now);
-                    const g = this.ctx.createGain(); g.gain.setValueAtTime(0.05, now); g.gain.exponentialRampToValueAtTime(0.001, now + dur);
-                    src.connect(flt); flt.connect(g); g.connect(this.ctx.destination); src.start(now);
-                } catch (e) {}
-            }
-            playItem(isGold = false) {
-                if (this.muted || !this.ctx) return;
-                try {
-                    const now = this.ctx.currentTime, freqs = isGold ? [587.33, 880, 1174.66] : [523.25, 783.99];
-                    freqs.forEach((f, idx) => {
-                        const o = this.ctx.createOscillator(), g = this.ctx.createGain();
-                        o.type = 'sine'; o.frequency.setValueAtTime(f, now + idx * 0.06);
-                        g.gain.setValueAtTime(0.11, now + idx * 0.06); g.gain.exponentialRampToValueAtTime(0.001, now + idx * 0.06 + 0.22);
-                        o.connect(g); g.connect(this.ctx.destination); o.start(now + idx * 0.06); o.stop(now + idx * 0.06 + 0.24);
-                    });
-                } catch (e) {}
-            }
-            playWarning() {
-                if (this.muted || !this.ctx) return;
-                try {
-                    const now = this.ctx.currentTime, o = this.ctx.createOscillator(), g = this.ctx.createGain();
-                    o.type = 'sawtooth'; o.frequency.setValueAtTime(460, now); o.frequency.setValueAtTime(540, now + 0.045);
-                    g.gain.setValueAtTime(0.032, now); g.gain.exponentialRampToValueAtTime(0.001, now + 0.095);
-                    o.connect(g); g.connect(this.ctx.destination); o.start(now); o.stop(now + 0.1);
-                } catch (e) {}
-            }
-            playTear() {
-                if (this.muted || !this.ctx) return;
-                try {
-                    const now = this.ctx.currentTime, len = Math.floor(this.ctx.sampleRate * 0.35), buf = this.ctx.createBuffer(1, len, this.ctx.sampleRate), ch = buf.getChannelData(0);
-                    for (let i = 0; i < len; i++) ch[i] = (Math.random() * 2 - 1) * Math.exp(-i / (len * 0.35));
-                    const src = this.ctx.createBufferSource(); src.buffer = buf;
-                    const flt = this.ctx.createBiquadFilter(); flt.type = 'bandpass'; flt.frequency.setValueAtTime(1400, now); flt.frequency.exponentialRampToValueAtTime(300, now + 0.35);
-                    const g = this.ctx.createGain(); g.gain.setValueAtTime(0.32, now); g.gain.exponentialRampToValueAtTime(0.01, now + 0.35);
-                    src.connect(flt); flt.connect(g); g.connect(this.ctx.destination); src.start(now);
-                } catch (e) {}
-            }
-            playFanfare(isFirst = true) {
-                if (this.muted || !this.ctx) return;
-                try {
-                    const now = this.ctx.currentTime + 0.18;
-                    const notes = isFirst
-                        ? [{ freq: 523.25, time: 0.0, dur: 0.12 }, { freq: 659.25, time: 0.11, dur: 0.12 }, { freq: 783.99, time: 0.22, dur: 0.12 }, { freq: 1046.50, time: 0.34, dur: 0.38 }, { freq: 880.00, time: 0.56, dur: 0.12 }, { freq: 1046.50, time: 0.70, dur: 0.45 }]
-                        : [{ freq: 523.25, time: 0.0, dur: 0.12 }, { freq: 659.25, time: 0.12, dur: 0.12 }, { freq: 783.99, time: 0.24, dur: 0.28 }];
-                    notes.forEach(n => {
-                        const o = this.ctx.createOscillator(), g = this.ctx.createGain();
-                        o.type = 'triangle'; o.frequency.setValueAtTime(n.freq, now + n.time);
-                        g.gain.setValueAtTime(0.001, now + n.time); g.gain.linearRampToValueAtTime(0.15, now + n.time + 0.02); g.gain.exponentialRampToValueAtTime(0.001, now + n.time + n.dur);
-                        o.connect(g); g.connect(this.ctx.destination); o.start(now + n.time); o.stop(now + n.time + n.dur + 0.02);
-                    });
-                } catch (e) {}
-            }
-        }
-        const sound = new SoundFX();
-
-        const RANKING_STORAGE_KEY = 'tp_longrun_ranking_top5_v1';
-        const LEGACY_BEST_KEY = 'tp_longrun_best_v1';
-        function formatNowDateTime() {
-            const d = new Date();
-            return `${String(d.getMonth() + 1).padStart(2, '0')}/${String(d.getDate()).padStart(2, '0')} ${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
-        }
-        function loadRanking() {
-            try {
-                const raw = localStorage.getItem(RANKING_STORAGE_KEY);
-                if (raw) {
-                    const p = JSON.parse(raw);
-                    if (Array.isArray(p)) return p.filter(x => typeof x.distance === 'number' && !Number.isNaN(x.distance)).map(x => ({ distance: Math.round(x.distance * 10) / 10, dateStr: x.dateStr || '--/-- --:--', id: x.id || String(Math.random()) })).sort((a, b) => b.distance - a.distance).slice(0, 5);
-                }
-                const leg = parseFloat(localStorage.getItem(LEGACY_BEST_KEY) || '0');
-                if (leg > 0) { const init = [{ distance: Math.round(leg * 10) / 10, dateStr: formatNowDateTime(), id: 'legacy-best' }]; saveRanking(init); return init; }
-            } catch (e) {}
-            return [];
-        }
-        function saveRanking(list) { try { localStorage.setItem(RANKING_STORAGE_KEY, JSON.stringify(list.slice(0, 5))); } catch (e) {} }
-        function clearRanking() { rankingList = []; try { localStorage.removeItem(RANKING_STORAGE_KEY); localStorage.removeItem(LEGACY_BEST_KEY); } catch (e) {} renderRankingBoards(); updateBestScoreUI(); }
-        function recordScoreToRanking(rawDist) {
-            const rounded = Math.round(rawDist * 10) / 10;
-            if (rounded <= 0) return { rank: null, isFirstPlace: false };
-            const prevTop = rankingList.length > 0 ? rankingList[0].distance : 0;
-            const id = `${Date.now()}-${Math.random().toString(36).slice(2, 6)}`;
-            const combined = [...rankingList, { distance: rounded, dateStr: formatNowDateTime(), id }].sort((a, b) => b.distance - a.distance).slice(0, 5);
-            const idx = combined.findIndex(x => x.id === id);
-            const rank = idx !== -1 ? idx + 1 : null;
-            rankingList = combined; saveRanking(rankingList); renderRankingBoards(); updateBestScoreUI();
-            return { rank, isFirstPlace: rank === 1 && rounded > prevTop };
-        }
-        function renderRankingBoards(highlightId = null) {
-            const containers = [document.getElementById('startRankingList'), document.getElementById('gameOverRankingList')];
-            const medals = ['🥇', '🥈', '🥉', '4.', '5.'];
-            containers.forEach(c => {
-                if (!c) return; c.innerHTML = '';
-                if (rankingList.length === 0) {
-                    const el = document.createElement('div'); el.className = 'text-center py-3 text-slate-400 font-bold text-[11px]'; el.textContent = 'まだ記録がありません。最初の1位を目指そう！'; c.appendChild(el); return;
-                }
-                for (let i = 0; i < 5; i++) {
-                    const item = rankingList[i], row = document.createElement('div'), hi = item && highlightId && item.id === highlightId;
-                    row.className = `flex items-center justify-between px-2.5 py-1 rounded-xl ${hi ? 'bg-amber-200/80 border border-amber-400 font-extrabold text-slate-900' : item ? 'bg-white/85 text-slate-700 font-bold' : 'bg-white/40 text-slate-400 font-medium'}`;
-                    const l = document.createElement('span'); l.className = 'flex items-center gap-1.5'; l.textContent = `${medals[i]} ${item ? `${item.distance.toFixed(1)}m` : '---'}`;
-                    const r = document.createElement('span'); r.className = 'text-[10px] text-slate-400 tabular-nums'; r.textContent = item ? item.dateStr : '';
-                    row.appendChild(l); row.appendChild(r); c.appendChild(row);
-                }
-            });
-        }
-
-        const canvas = document.getElementById('gameCanvas'), ctx = canvas.getContext('2d'), wrapper = document.getElementById('game-wrapper');
-        const hud = document.getElementById('hud'), distanceDisplay = document.getElementById('distanceDisplay'), hudBestDisplay = document.getElementById('hudBestDisplay');
-        const tensionBar = document.getElementById('tensionBar'), tensionPercent = document.getElementById('tensionPercent'), tensionContainer = document.getElementById('tensionContainer'), touchHint = document.getElementById('touchHint');
-        const startScreen = document.getElementById('startScreen'), gameOverScreen = document.getElementById('gameOverScreen'), finalDistanceEl = document.getElementById('finalDistance');
-        const failReasonBadge = document.getElementById('failReasonBadge'), recordBanner = document.getElementById('recordBanner'), rankComment = document.getElementById('rankComment');
-        const resetConfirmModal = document.getElementById('resetConfirmModal'), toastMsg = document.getElementById('toastMsg');
-        const startBtn = document.getElementById('startBtn'), retryBtn = document.getElementById('retryBtn'), shareBtn = document.getElementById('shareBtn');
-        const confirmResetBtn = document.getElementById('confirmResetBtn'), cancelResetBtn = document.getElementById('cancelResetBtn');
-        const soundToggleBtn = document.getElementById('soundToggleBtn'), soundOnIcon = document.getElementById('soundOnIcon'), soundOffIcon = document.getElementById('soundOffIcon');
-
-        let rankingList = loadRanking(), lastRecordedEntryId = null, width = 0, height = 0, dpr = 1;
-        let gameState = 'START', distance = 0, speed = 230, rollAngle = 0, rollRadius = 38, durability = 100, lastWarningTime = 0;
-        const paper = { x: 0, y: 0, targetX: 0, vx: 0, width: 34, trail: [] };
-        const input = { isPointerDown: false, lastPointerX: 0, leftPressed: false, rightPressed: false };
-        let entities = [], particles = [], floatingTexts = [], spawnTimer = 0, lastTime = 0, tearPoint = null;
-
-        function getTopScore() { return rankingList.length > 0 ? rankingList[0].distance : 0; }
-        function updateBestScoreUI() { hudBestDisplay.textContent = getTopScore().toFixed(1); }
-        function showToast(msg) { toastMsg.textContent = msg; toastMsg.classList.remove('hidden'); setTimeout(() => toastMsg.classList.add('hidden'), 2200); }
-        function getRollY() { return Math.max(115, height * 0.16); }
-        function initPaperTrail() {
-            paper.trail = []; const sy = getRollY() + 18, steps = 28;
-            for (let i = 0; i <= steps; i++) { const t = i / steps; paper.trail.push({ x: paper.x, y: sy + (paper.y - sy) * t }); }
-        }
-        function resizeCanvas() {
-            try {
-                const rect = wrapper.getBoundingClientRect();
-                dpr = Math.min(window.devicePixelRatio || 1, 2); width = Math.max(280, rect.width); height = Math.max(400, rect.height);
-                canvas.width = Math.floor(width * dpr); canvas.height = Math.floor(height * dpr); ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-                if (gameState === 'START') { paper.x = width / 2; paper.targetX = width / 2; paper.y = height * 0.44; initPaperTrail(); }
-            } catch (e) {}
-        }
-        function startGame() {
-            sound.init(); sound.setSpeedRatio(0); sound.startPlayBgm();
-            gameState = 'PLAYING'; distance = 0; speed = 230; durability = 100; rollRadius = 38;
-            entities = []; particles = []; floatingTexts = []; tearPoint = null; lastRecordedEntryId = null; spawnTimer = 0.65;
-            paper.x = width / 2; paper.targetX = width / 2; paper.vx = 0; paper.y = height * 0.45; initPaperTrail();
-            startScreen.classList.add('hidden'); gameOverScreen.classList.add('hidden'); resetConfirmModal.classList.add('hidden');
-            hud.classList.remove('hidden'); touchHint.classList.remove('hidden'); updateHUD();
-        }
-        function triggerGameOver(reasonText, bx = paper.x, by = paper.y) {
-            if (gameState !== 'PLAYING') return;
-            gameState = 'GAMEOVER'; sound.stopBgm(); sound.playTear(); tearPoint = { x: bx, y: by };
-            for (let i = 0; i < 24; i++) particles.push({ x: bx + (Math.random() - 0.5) * 30, y: by + (Math.random() - 0.5) * 20, vx: (Math.random() - 0.5) * 260, vy: -60 - Math.random() * 180, size: 6 + Math.random() * 8, rot: Math.random() * Math.PI * 2, vRot: (Math.random() - 0.5) * 10, color: i % 3 === 0 ? '#bae6fd' : '#ffffff', life: 1.2 + Math.random() * 0.6 });
-            const roundedDist = Math.round(distance * 10) / 10, { rank, isFirstPlace } = recordScoreToRanking(roundedDist);
-            if (rankingList.length > 0 && rank !== null) lastRecordedEntryId = rankingList[rank - 1]?.id || null;
-            renderRankingBoards(lastRecordedEntryId);
-            recordBanner.classList.remove('hidden');
-            if (isFirstPlace) { recordBanner.className = 'mb-2.5 py-1.5 px-3 rounded-2xl font-black text-xs bg-gradient-to-r from-amber-300 via-yellow-200 to-amber-300 text-amber-900 border-2 border-amber-400 shadow-sm record-banner-anim'; recordBanner.textContent = '🎉 NEW RECORD! 歴代1位を更新しました！'; sound.playFanfare(true); }
-            else if (rank !== null) { recordBanner.className = 'mb-2.5 py-1.5 px-3 rounded-2xl font-extrabold text-xs bg-sky-100 text-sky-800 border-2 border-sky-300 record-banner-anim'; recordBanner.textContent = `⭐ TOP 5 ランクイン！（第${rank}位）`; sound.playFanfare(false); }
-            else recordBanner.classList.add('hidden');
-            failReasonBadge.textContent = reasonText; finalDistanceEl.textContent = roundedDist.toFixed(1); rankComment.textContent = getRankTitle(roundedDist);
-            touchHint.classList.add('hidden'); setTimeout(() => gameOverScreen.classList.remove('hidden'), 520);
-        }
-        function getRankTitle(m) {
-            if (m < 10) return '称号：もったいない精神の見習い'; if (m < 25) return '称号：一般家庭のロール使い'; if (m < 50) return '称号：繊細な指先のペーパー職人';
-            if (m < 80) return '称号：トイレの魔術師'; if (m < 120) return '称号：伝説のロングロールマスター'; return '称号：神に選ばれし無限ペーパー神';
-        }
-        function spawnEntity() {
-            const margin = 42, sx = margin + Math.random() * (width - margin * 2), sy = height + 50, r = Math.random();
-            if (r < 0.30) entities.push({ type: 'puddle', x: sx, y: sy, radius: 26 + Math.random() * 10, wobble: Math.random() * Math.PI * 2 });
-            else if (r < 0.56) { const mv = distance > 18 && Math.random() < 0.45; entities.push({ type: 'scissors', x: sx, y: sy, radius: 22, vx: mv ? (Math.random() < 0.5 ? 75 : -75) : 0, snipPhase: Math.random() * Math.PI * 2 }); }
-            else if (r < 0.75) { const fl = Math.random() < 0.5; entities.push({ type: 'catpaw', x: fl ? -30 : width + 30, y: sy, fromLeft: fl, reach: width * (0.34 + Math.random() * 0.14), phase: Math.random() * Math.PI * 2, radius: 22 }); }
-            else if (r < 0.86) { const br = sx < width / 2; entities.push({ type: 'fan', x: br ? 34 : width - 34, y: sy, blowRight: br, radius: 26, bladeAngle: 0 }); }
-            else if (r < 0.95) entities.push({ type: 'repair', x: sx, y: sy, radius: 20, bob: 0 });
-            else entities.push({ type: 'gold', x: sx, y: sy, radius: 21, bob: 0 });
-        }
-        function addFloatingText(x, y, text, color = '#0284c7') { floatingTexts.push({ x, y, text, color, life: 1.0 }); }
-
-        function update(dt) {
-            for (let i = particles.length - 1; i >= 0; i--) { const p = particles[i]; p.x += p.vx * dt; p.y += p.vy * dt; p.vy += 420 * dt; p.rot += p.vRot * dt; p.life -= dt; if (p.life <= 0) particles.splice(i, 1); }
-            for (let i = floatingTexts.length - 1; i >= 0; i--) { const ft = floatingTexts[i]; ft.y -= 45 * dt; ft.life -= dt; if (ft.life <= 0) floatingTexts.splice(i, 1); }
-            if (gameState !== 'PLAYING') { if (gameState === 'START') rollAngle += 1.2 * dt; return; }
-            distance += (speed / 42) * dt; speed = Math.min(540, 230 + distance * 2.1); rollAngle += (speed / 28) * dt; rollRadius = Math.max(18, 38 - distance * 0.08);
-            const sRatio = (speed - 230) / 310; sound.setSpeedRatio(sRatio); sound.playRollTick(sRatio);
-            if (input.leftPressed) paper.targetX -= 420 * dt; if (input.rightPressed) paper.targetX += 420 * dt;
-            paper.targetX = Math.max(26, Math.min(width - 26, paper.targetX));
-            const prevX = paper.x; paper.x += (paper.targetX - paper.x) * (1 - Math.exp(-16 * dt)); paper.vx = (paper.x - prevX) / Math.max(dt, 0.001);
-            const absVx = Math.abs(paper.vx), stretchRatio = Math.abs(paper.x - width / 2) / (width * 0.5);
-            if (absVx > 335) durability -= (30 + ((absVx - 335) / 460) * 68) * dt;
-            else durability = Math.min(100, durability + (stretchRatio > 0.75 ? 5 : 11) * dt);
-            if (durability < 30 && performance.now() - lastWarningTime > 450) { sound.playWarning(); lastWarningTime = performance.now(); }
-            if (durability <= 0) { durability = 0; updateHUD(); triggerGameOver('ビリッ！急操作で紙がちぎれた！', paper.x, paper.y - 30); return; }
-            const rollBottomY = getRollY() + rollRadius * 0.55, steps = paper.trail.length - 1;
-            for (let i = 0; i <= steps; i++) {
-                const t = i / steps, ease = t * t * (3 - 2 * t), wave = Math.sin(distance * 3 - t * 5) * (2.5 * t);
-                paper.trail[i].y = rollBottomY + (paper.y - rollBottomY) * t;
-                paper.trail[i].x += (((width / 2) + (paper.x - width / 2) * ease + wave) - paper.trail[i].x) * Math.min(1, dt * (12 + t * 14));
-            }
-            spawnTimer -= dt;
-            if (spawnTimer <= 0) { spawnEntity(); spawnTimer = Math.max(0.48, 1.18 - distance * 0.0045) * (0.8 + Math.random() * 0.4); }
-            for (let i = entities.length - 1; i >= 0; i--) {
-                const e = entities[i]; e.y -= speed * dt;
-                if (e.type === 'puddle') e.wobble += 4 * dt;
-                else if (e.type === 'scissors') { e.snipPhase += 12 * dt; e.x += e.vx * dt; if (e.x < 35 || e.x > width - 35) e.vx *= -1; }
-                else if (e.type === 'catpaw') { e.phase += 4.5 * dt; e.x = e.fromLeft ? (-15 + (Math.sin(e.phase) * 0.5 + 0.5) * e.reach) : (width + 15 - (Math.sin(e.phase) * 0.5 + 0.5) * e.reach); }
-                else if (e.type === 'fan') { e.bladeAngle += 18 * dt; if (Math.abs(e.y - paper.y) < 48) { paper.targetX += (e.blowRight ? 185 : -185) * dt; durability -= 14 * dt; sound.playWindWhoosh(); } }
-                else if (e.type === 'repair' || e.type === 'gold') e.bob += 5 * dt;
-                const pts = [{ x: paper.x, y: paper.y }, paper.trail[Math.floor(paper.trail.length * 0.78)]];
-                let hit = false;
-                for (const pt of pts) { if (pt && Math.hypot(pt.x - e.x, pt.y - e.y) < e.radius + paper.width * 0.36) { hit = true; break; } }
-                if (hit) {
-                    if (e.type === 'repair') { durability = Math.min(100, durability + 35); sound.playItem(false); addFloatingText(e.x, e.y - 10, '耐久 +35%!', '#10b981'); entities.splice(i, 1); continue; }
-                    if (e.type === 'gold') { distance += 5.0; durability = Math.min(100, durability + 20); sound.playItem(true); addFloatingText(e.x, e.y - 10, '+5.0m ボーナス!', '#f59e0b'); entities.splice(i, 1); continue; }
-                    if (e.type === 'puddle') { triggerGameOver('ビチャッ！水たまりでふやけた！', e.x, e.y); return; }
-                    if (e.type === 'scissors') { triggerGameOver('チョキン！ハサミで切られた！', e.x, e.y); return; }
-                    if (e.type === 'catpaw') { triggerGameOver('ニャー！猫に引きちぎられた！', e.x, e.y); return; }
-                }
-                if (e.y < -80) entities.splice(i, 1);
-            }
-            updateHUD();
-        }
-        function updateHUD() {
-            distanceDisplay.textContent = distance.toFixed(1);
-            const pct = Math.max(0, Math.min(100, Math.round(durability)));
-            tensionPercent.textContent = `${pct}%`; tensionBar.style.width = `${pct}%`;
-            tensionContainer.classList.remove('border-rose-400', 'danger-pulse', 'border-sky-200');
-            if (pct <= 30) { tensionBar.className = 'h-full bg-gradient-to-r from-rose-500 to-red-600 rounded-full transition-all duration-75'; tensionPercent.className = 'text-rose-600 font-extrabold'; tensionContainer.classList.add('border-rose-400', 'danger-pulse'); }
-            else if (pct <= 60) { tensionBar.className = 'h-full bg-gradient-to-r from-amber-400 to-orange-400 rounded-full transition-all duration-75'; tensionPercent.className = 'text-amber-600 font-extrabold'; tensionContainer.classList.add('border-sky-200'); }
-            else { tensionBar.className = 'h-full bg-gradient-to-r from-emerald-400 to-sky-400 rounded-full transition-all duration-75'; tensionPercent.className = 'text-sky-600 font-extrabold'; tensionContainer.classList.add('border-sky-200'); }
-        }
-        function draw() {
-            ctx.clearRect(0, 0, width, height);
-            const offset = (distance * 42) % 90; ctx.save(); ctx.strokeStyle = 'rgba(125, 211, 252, 0.35)'; ctx.lineWidth = 2; ctx.setLineDash([8, 12]);
-            for (let x = 45; x < width; x += 90) { ctx.beginPath(); ctx.moveTo(x, -offset); ctx.lineTo(x, height); ctx.stroke(); }
-            ctx.restore();
-            entities.forEach(drawEntity);
-            if (gameState !== 'GAMEOVER') drawPaperRibbon(); else if (tearPoint) drawTornPaper();
-            drawPaperRoll();
-            particles.forEach(p => { ctx.save(); ctx.translate(p.x, p.y); ctx.rotate(p.rot); ctx.fillStyle = p.color; ctx.strokeStyle = '#cbd5e1'; ctx.lineWidth = 1; ctx.fillRect(-p.size / 2, -p.size / 2, p.size, p.size * 0.7); ctx.strokeRect(-p.size / 2, -p.size / 2, p.size, p.size * 0.7); ctx.restore(); });
-            floatingTexts.forEach(ft => { ctx.save(); ctx.globalAlpha = Math.max(0, ft.life); ctx.font = '800 15px "M PLUS Rounded 1c", sans-serif'; ctx.textAlign = 'center'; ctx.lineWidth = 4; ctx.strokeStyle = '#ffffff'; ctx.strokeText(ft.text, ft.x, ft.y); ctx.fillStyle = ft.color; ctx.fillText(ft.text, ft.x, ft.y); ctx.restore(); });
-        }
-        function drawPaperRibbon() {
-            if (paper.trail.length < 2) return;
-            const halfW = paper.width / 2, dangerRatio = Math.max(0, (55 - durability) / 55);
-            ctx.save(); ctx.beginPath();
-            paper.trail.forEach((pt, i) => i === 0 ? ctx.moveTo(pt.x - halfW + 4, pt.y + 6) : ctx.lineTo(pt.x - halfW + 4, pt.y + 6));
-            for (let i = paper.trail.length - 1; i >= 0; i--) ctx.lineTo(paper.trail[i].x + halfW + 4, paper.trail[i].y + 6);
-            ctx.closePath(); ctx.fillStyle = 'rgba(15, 23, 42, 0.08)'; ctx.fill();
-            ctx.beginPath();
-            paper.trail.forEach((pt, i) => i === 0 ? ctx.moveTo(pt.x - halfW, pt.y) : ctx.lineTo(pt.x - halfW, pt.y));
-            const tip = paper.trail[paper.trail.length - 1];
-            for (let t = 0; t <= 5; t++) ctx.lineTo((tip.x - halfW) + (paper.width * (t / 5)), tip.y + (t % 2 === 0 ? 0 : 4));
-            for (let i = paper.trail.length - 1; i >= 0; i--) ctx.lineTo(paper.trail[i].x + halfW, paper.trail[i].y);
-            ctx.closePath();
-            const c = Math.round(255 - dangerRatio * 145); ctx.fillStyle = `rgb(255, ${c}, ${c})`; ctx.fill();
-            ctx.lineWidth = 2; ctx.strokeStyle = dangerRatio > 0.4 ? '#f43f5e' : '#cbd5e1'; ctx.stroke();
-            ctx.strokeStyle = dangerRatio > 0.4 ? 'rgba(244, 63, 94, 0.5)' : 'rgba(148, 163, 184, 0.55)'; ctx.lineWidth = 1.5; ctx.setLineDash([3, 3]);
-            const po = ((distance * 42) % 38) * 0.15;
-            for (let i = 2; i < paper.trail.length - 1; i += 4) { const pt = paper.trail[i]; ctx.beginPath(); ctx.moveTo(pt.x - halfW + 2, pt.y + po); ctx.lineTo(pt.x + halfW - 2, pt.y + po); ctx.stroke(); }
-            ctx.setLineDash([]);
-            ctx.beginPath(); ctx.arc(tip.x, tip.y - 6, 7, 0, Math.PI * 2); ctx.fillStyle = dangerRatio > 0.4 ? 'rgba(244, 63, 94, 0.25)' : 'rgba(14, 165, 233, 0.22)'; ctx.fill();
-            ctx.restore();
-        }
-        function drawTornPaper() {
-            const halfW = paper.width / 2, topPt = paper.trail[0]; if (!topPt) return;
-            ctx.save(); ctx.beginPath(); ctx.moveTo(topPt.x - halfW, topPt.y); ctx.lineTo(topPt.x - halfW, topPt.y + 42); ctx.lineTo(topPt.x - 6, topPt.y + 34); ctx.lineTo(topPt.x + 4, topPt.y + 46); ctx.lineTo(topPt.x + halfW, topPt.y + 36); ctx.lineTo(topPt.x + halfW, topPt.y); ctx.closePath();
-            ctx.fillStyle = '#ffffff'; ctx.fill(); ctx.strokeStyle = '#cbd5e1'; ctx.lineWidth = 2; ctx.stroke(); ctx.restore();
-        }
-        function drawPaperRoll() {
-            const cx = width / 2, cy = getRollY(), rollWidth = 86, r = rollRadius;
-            ctx.save(); ctx.strokeStyle = '#94a3b8'; ctx.lineWidth = 6; ctx.lineCap = 'round';
-            ctx.beginPath(); ctx.moveTo(cx - rollWidth / 2 - 12, cy - 26); ctx.lineTo(cx - rollWidth / 2 - 12, cy); ctx.lineTo(cx + rollWidth / 2 + 12, cy); ctx.lineTo(cx + rollWidth / 2 + 12, cy - 26); ctx.stroke();
-            ctx.fillStyle = 'rgba(15, 23, 42, 0.1)'; ctx.beginPath(); ctx.roundRect(cx - rollWidth / 2 + 3, cy - r + 5, rollWidth, r * 2, 10); ctx.fill();
-            const grad = ctx.createLinearGradient(0, cy - r, 0, cy + r); grad.addColorStop(0, '#e2e8f0'); grad.addColorStop(0.25, '#ffffff'); grad.addColorStop(0.75, '#f8fafc'); grad.addColorStop(1, '#cbd5e1');
-            ctx.fillStyle = grad; ctx.strokeStyle = '#94a3b8'; ctx.lineWidth = 2; ctx.beginPath(); ctx.roundRect(cx - rollWidth / 2, cy - r, rollWidth, r * 2, 8); ctx.fill(); ctx.stroke();
-            ctx.save(); ctx.beginPath(); ctx.roundRect(cx - rollWidth / 2, cy - r, rollWidth, r * 2, 8); ctx.clip();
-            ctx.strokeStyle = 'rgba(148, 163, 184, 0.35)'; ctx.lineWidth = 1.5; ctx.setLineDash([4, 4]);
-            for (let k = -2; k <= 2; k++) { const y = cy + Math.cos((rollAngle + k * 0.9) % Math.PI) * (r * 0.88); ctx.beginPath(); ctx.moveTo(cx - rollWidth / 2, y); ctx.lineTo(cx + rollWidth / 2, y); ctx.stroke(); }
-            ctx.restore();
-            const sideX = cx + rollWidth / 2;
-            ctx.fillStyle = '#f1f5f9'; ctx.strokeStyle = '#94a3b8'; ctx.lineWidth = 2; ctx.beginPath(); ctx.ellipse(sideX, cy, 11, r, 0, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
-            ctx.fillStyle = '#b45309'; ctx.beginPath(); ctx.ellipse(sideX, cy, 4.5, 11, 0, 0, Math.PI * 2); ctx.fill(); ctx.restore();
-        }
-        function drawEntity(e) {
-            ctx.save(); ctx.translate(e.x, e.y);
-            if (e.type === 'puddle') {
-                ctx.scale(1 + Math.sin(e.wobble) * 0.06, 1 + Math.cos(e.wobble) * 0.06);
-                ctx.fillStyle = 'rgba(56, 189, 248, 0.78)'; ctx.strokeStyle = '#0284c7'; ctx.lineWidth = 2.5; ctx.beginPath(); ctx.arc(0, 0, e.radius, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
-                ctx.fillStyle = 'rgba(255, 255, 255, 0.75)'; ctx.beginPath(); ctx.ellipse(-e.radius * 0.3, -e.radius * 0.3, e.radius * 0.28, e.radius * 0.14, -0.5, 0, Math.PI * 2); ctx.fill();
-                ctx.font = 'bold 11px "M PLUS Rounded 1c", sans-serif'; ctx.fillStyle = '#0369a1'; ctx.textAlign = 'center'; ctx.fillText('みず', 0, 4);
-            } else if (e.type === 'scissors') {
-                const oa = 0.22 + Math.abs(Math.sin(e.snipPhase)) * 0.35; ctx.rotate(-Math.PI / 2);
-                [oa, -oa].forEach((ang, idx) => { ctx.save(); ctx.rotate(ang); ctx.fillStyle = idx === 0 ? '#cbd5e1' : '#94a3b8'; ctx.strokeStyle = '#475569'; ctx.lineWidth = 2; ctx.beginPath(); ctx.moveTo(0, -3); ctx.lineTo(24, 0); ctx.lineTo(0, 4); ctx.closePath(); ctx.fill(); ctx.stroke(); ctx.restore(); });
-                ctx.strokeStyle = '#ef4444'; ctx.lineWidth = 4; ctx.beginPath(); ctx.arc(-10, -8, 6, 0, Math.PI * 2); ctx.stroke(); ctx.beginPath(); ctx.arc(-10, 8, 6, 0, Math.PI * 2); ctx.stroke();
-            } else if (e.type === 'catpaw') {
-                ctx.scale(e.fromLeft ? 1 : -1, 1);
-                ctx.fillStyle = '#fef3c7'; ctx.strokeStyle = '#d97706'; ctx.lineWidth = 2.5; ctx.beginPath(); ctx.roundRect(-180, -16, 185, 32, 16); ctx.fill(); ctx.stroke();
-                ctx.fillStyle = '#f59e0b'; for (let s = -140; s <= -35; s += 35) ctx.fillRect(s, -15, 10, 12);
-                ctx.fillStyle = '#fb7185'; ctx.beginPath(); ctx.arc(0, 0, 7, 0, Math.PI * 2); ctx.fill();
-                [[-7, -9], [2, -10], [8, -4], [4, 8]].forEach(([px, py]) => { ctx.beginPath(); ctx.arc(px, py, 3.2, 0, Math.PI * 2); ctx.fill(); });
-            } else if (e.type === 'fan') {
-                const dir = e.blowRight ? 1 : -1; ctx.strokeStyle = 'rgba(56, 189, 248, 0.55)'; ctx.lineWidth = 2; ctx.setLineDash([8, 8]);
-                for (let row = -16; row <= 16; row += 16) { ctx.beginPath(); ctx.moveTo(dir * 26, row); ctx.lineTo(dir * (width * 0.65), row); ctx.stroke(); }
-                ctx.setLineDash([]); ctx.fillStyle = '#e0f2fe'; ctx.strokeStyle = '#0284c7'; ctx.lineWidth = 2.5; ctx.beginPath(); ctx.arc(0, 0, 22, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
-                ctx.save(); ctx.rotate(e.bladeAngle); ctx.fillStyle = '#38bdf8';
-                for (let b = 0; b < 3; b++) { ctx.rotate((Math.PI * 2) / 3); ctx.beginPath(); ctx.ellipse(0, -9, 4, 8, 0, 0, Math.PI * 2); ctx.fill(); }
-                ctx.restore();
-            } else if (e.type === 'repair' || e.type === 'gold') {
-                const isG = e.type === 'gold'; ctx.scale(1 + Math.sin(e.bob) * (isG ? 0.1 : 0.08), 1 + Math.sin(e.bob) * (isG ? 0.1 : 0.08));
-                ctx.fillStyle = isG ? '#fef3c7' : '#d1fae5'; ctx.strokeStyle = isG ? '#f59e0b' : '#10b981'; ctx.lineWidth = isG ? 3 : 2.5; ctx.beginPath(); ctx.arc(0, 0, e.radius, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
-                ctx.fillStyle = isG ? '#fbbf24' : '#ffffff'; ctx.strokeStyle = isG ? '#b45309' : '#059669'; ctx.lineWidth = 1.8; ctx.beginPath(); ctx.roundRect(-10, -8, 20, 16, 4); ctx.fill(); ctx.stroke();
-                ctx.font = '800 10px "M PLUS Rounded 1c", sans-serif'; ctx.fillStyle = isG ? '#b45309' : '#047857'; ctx.textAlign = 'center'; ctx.fillText(isG ? '+5m' : '回復', 0, 16);
-            }
-            ctx.restore();
-        }
-        function gameLoop(ts) {
-            if (!lastTime) lastTime = ts;
-            const dt = Math.min(0.05, (ts - lastTime) / 1000); lastTime = ts;
-            update(dt); draw(); requestAnimationFrame(gameLoop);
-        }
-        function handlePointerDown(e) { if (gameState !== 'PLAYING') return; sound.init(); input.isPointerDown = true; input.lastPointerX = e.touches ? e.touches[0].clientX : e.clientX; touchHint.classList.add('hidden'); }
-        function handlePointerMove(e) { if (gameState !== 'PLAYING' || !input.isPointerDown) return; const cx = e.touches ? e.touches[0].clientX : e.clientX; paper.targetX += (cx - input.lastPointerX) * 1.15; input.lastPointerX = cx; }
-        function handlePointerUp() { input.isPointerDown = false; }
-
-        canvas.addEventListener('touchstart', handlePointerDown, { passive: true }); canvas.addEventListener('touchmove', handlePointerMove, { passive: true }); canvas.addEventListener('touchend', handlePointerUp); canvas.addEventListener('touchcancel', handlePointerUp);
-        canvas.addEventListener('mousedown', handlePointerDown); window.addEventListener('mousemove', handlePointerMove); window.addEventListener('mouseup', handlePointerUp);
-        window.addEventListener('keydown', e => { if (e.key === 'ArrowLeft' || e.key === 'a' || e.key === 'A') input.leftPressed = true; if (e.key === 'ArrowRight' || e.key === 'd' || e.key === 'D') input.rightPressed = true; });
-        window.addEventListener('keyup', e => { if (e.key === 'ArrowLeft' || e.key === 'a' || e.key === 'A') input.leftPressed = false; if (e.key === 'ArrowRight' || e.key === 'd' || e.key === 'D') input.rightPressed = false; });
-
-        startBtn.addEventListener('click', startGame); retryBtn.addEventListener('click', startGame);
-        soundToggleBtn.addEventListener('click', () => { sound.init(); const m = sound.toggleMute(); soundOnIcon.classList.toggle('hidden', m); soundOffIcon.classList.toggle('hidden', !m); });
-        document.querySelectorAll('[data-reset-trigger]').forEach(b => b.addEventListener('click', () => resetConfirmModal.classList.remove('hidden')));
-        cancelResetBtn.addEventListener('click', () => resetConfirmModal.classList.add('hidden'));
-        confirmResetBtn.addEventListener('click', () => { lastRecordedEntryId = null; clearRanking(); resetConfirmModal.classList.add('hidden'); showToast('TOP 5 ランキングをリセットしました'); });
-        shareBtn.addEventListener('click', () => {
-            const r = Math.round(distance * 10) / 10, txt = `🧻 トイレットペーパー・ロングランで【${r.toFixed(1)}m】伸ばしました！（1位記録: ${getTopScore().toFixed(1)}m） #トイレットペーパーゲーム`;
-            const ta = document.createElement('textarea'); ta.value = txt; document.body.appendChild(ta); ta.select();
-            try { document.execCommand('copy'); showToast('クリップボードにコピーしました！'); } catch (e) { showToast('コピーできませんでした'); }
-            document.body.removeChild(ta);
-        });
-
-        window.addEventListener('resize', resizeCanvas);
-        window.onload = () => { renderRankingBoards(); updateBestScoreUI(); resizeCanvas(); requestAnimationFrame(gameLoop); };
-    </script>
+<script>
+class SoundFX {
+constructor() {
+this.ctx = null; this.muted = false; this.lastRollTick = 0; this.lastWindTime = 0;
+this.bgmMode = 'NONE';
+this.bgmTimer = null; this.bgmStep = 0; this.speedRatio = 0;
+}
+init() {
+try {
+if (!this.ctx) {
+const AudioCtx = window.AudioContext || window.webkitAudioContext;
+if (AudioCtx) this.ctx = new AudioCtx();
+}
+if (this.ctx && this.ctx.state === 'suspended') this.ctx.resume();
+} catch (e) {}
+}
+toggleMute() {
+this.muted = !this.muted;
+if (this.muted) this.stopBgmTimerOnly();
+else if (this.bgmMode === 'STAR') this.startStarBgm();
+else if (this.bgmMode === 'PLAYING') this.startPlayBgm();
+return this.muted;
+}
+setSpeedRatio(r) { this.speedRatio = Math.max(0, Math.min(1, r || 0)); }
+stopBgmTimerOnly() { if (this.bgmTimer) { clearTimeout(this.bgmTimer); this.bgmTimer = null; } }
+stopBgm() { this.bgmMode = 'NONE'; this.stopBgmTimerOnly(); }
+startPlayBgm() {
+this.init(); this.bgmMode = 'PLAYING'; this.stopBgmTimerOnly();
+if (this.muted || !this.ctx) return;
+const melody = [523.25, 0, 659.25, 783.99, 880.00, 783.99, 659.25, 587.33, 523.25, 659.25, 587.33, 698.46, 783.99, 0, 659.25, 0];
+const bass = [130.81, 0, 196.00, 0, 146.83, 0, 220.00, 0, 130.81, 0, 174.61, 0, 196.00, 0, 146.83, 0];
+const stepFn = () => {
+if (this.muted || this.bgmMode !== 'PLAYING' || !this.ctx) return;
+if (this.ctx.state === 'suspended') this.ctx.resume();
+const now = this.ctx.currentTime, i = this.bgmStep % melody.length;
+const dur = 0.225 - this.speedRatio * 0.032;
+if (melody[i] > 0) {
+const o = this.ctx.createOscillator(), g = this.ctx.createGain();
+o.type = 'triangle'; o.frequency.setValueAtTime(melody[i], now);
+g.gain.setValueAtTime(0.001, now); g.gain.linearRampToValueAtTime(0.055, now + 0.015); g.gain.exponentialRampToValueAtTime(0.001, now + dur * 0.9);
+o.connect(g); g.connect(this.ctx.destination); o.start(now); o.stop(now + dur);
+}
+if (bass[i] > 0) {
+const bo = this.ctx.createOscillator(), bg = this.ctx.createGain();
+bo.type = 'sine'; bo.frequency.setValueAtTime(bass[i], now);
+bg.gain.setValueAtTime(0.001, now); bg.gain.linearRampToValueAtTime(0.065, now + 0.015); bg.gain.exponentialRampToValueAtTime(0.001, now + dur * 1.3);
+bo.connect(bg); bg.connect(this.ctx.destination); bo.start(now); bo.stop(now + dur * 1.35);
+}
+this.bgmStep++; this.bgmTimer = setTimeout(stepFn, dur * 1000);
+};
+stepFn();
+}
+startStarBgm() {
+this.init(); this.bgmMode = 'STAR'; this.stopBgmTimerOnly();
+if (this.muted || !this.ctx) return;
+const starMel = [
+523.25, 523.25, 523.25, 440.00, 523.25, 0, 523.25, 440.00,
+493.88, 493.88, 493.88, 392.00, 493.88, 0, 493.88, 392.00
+];
+const starBass = [
+130.81, 196.00, 261.63, 196.00, 130.81, 196.00, 261.63, 196.00,
+123.47, 196.00, 246.94, 196.00, 123.47, 196.00, 246.94, 196.00
+];
+let sStep = 0;
+const stepFn = () => {
+if (this.muted || this.bgmMode !== 'STAR' || !this.ctx) return;
+if (this.ctx.state === 'suspended') this.ctx.resume();
+const now = this.ctx.currentTime, i = sStep % starMel.length, dur = 0.115;
+if (starMel[i] > 0) {
+const o = this.ctx.createOscillator(), g = this.ctx.createGain();
+o.type = 'square'; o.frequency.setValueAtTime(starMel[i] * 2, now);
+g.gain.setValueAtTime(0.001, now); g.gain.linearRampToValueAtTime(0.045, now + 0.008); g.gain.exponentialRampToValueAtTime(0.001, now + dur * 0.85);
+o.connect(g); g.connect(this.ctx.destination); o.start(now); o.stop(now + dur);
+}
+const bo = this.ctx.createOscillator(), bg = this.ctx.createGain();
+bo.type = 'triangle'; bo.frequency.setValueAtTime(starBass[i], now);
+bg.gain.setValueAtTime(0.001, now); bg.gain.linearRampToValueAtTime(0.075, now + 0.008); bg.gain.exponentialRampToValueAtTime(0.001, now + dur * 0.9);
+bo.connect(bg); bo.connect(this.ctx.destination); bo.start(now); bo.stop(now + dur);
+sStep++; this.bgmTimer = setTimeout(stepFn, dur * 1000);
+};
+stepFn();
+}
+playStarGet() {
+if (this.muted || !this.ctx) return;
+try {
+const now = this.ctx.currentTime;
+[523.25, 659.25, 783.99, 1046.50, 1318.51, 1567.98].forEach((f, idx) => {
+const o = this.ctx.createOscillator(), g = this.ctx.createGain();
+o.type = 'triangle'; o.frequency.setValueAtTime(f, now + idx * 0.045);
+g.gain.setValueAtTime(0.12, now + idx * 0.045); g.gain.exponentialRampToValueAtTime(0.001, now + idx * 0.045 + 0.25);
+o.connect(g); g.connect(this.ctx.destination); o.start(now + idx * 0.045); o.stop(now + idx * 0.045 + 0.26);
+});
+} catch (e) {}
+}
+playSmash() {
+if (this.muted || !this.ctx) return;
+try {
+const now = this.ctx.currentTime, o = this.ctx.createOscillator(), g = this.ctx.createGain();
+o.type = 'sine'; o.frequency.setValueAtTime(320, now); o.frequency.exponentialRampToValueAtTime(980, now + 0.14);
+g.gain.setValueAtTime(0.14, now); g.gain.exponentialRampToValueAtTime(0.001, now + 0.15);
+o.connect(g); g.connect(this.ctx.destination); o.start(now); o.stop(now + 0.16);
+} catch (e) {}
+}
+playRollTick(ratio) {
+if (this.muted || !this.ctx) return;
+try {
+const now = this.ctx.currentTime;
+if (now - this.lastRollTick < Math.max(0.06, 0.14 - ratio * 0.05)) return;
+this.lastRollTick = now;
+const o = this.ctx.createOscillator(), g = this.ctx.createGain();
+o.type = 'triangle'; o.frequency.setValueAtTime(220 + Math.random() * 55, now); o.frequency.exponentialRampToValueAtTime(95, now + 0.032);
+g.gain.setValueAtTime(0.022, now); g.gain.exponentialRampToValueAtTime(0.001, now + 0.032);
+o.connect(g); g.connect(this.ctx.destination); o.start(now); o.stop(now + 0.038);
+} catch (e) {}
+}
+playWindWhoosh() {
+if (this.muted || !this.ctx) return;
+try {
+const now = this.ctx.currentTime;
+if (now - this.lastWindTime < 0.16) return;
+this.lastWindTime = now;
+const dur = 0.15, len = Math.floor(this.ctx.sampleRate * dur), buf = this.ctx.createBuffer(1, len, this.ctx.sampleRate), ch = buf.getChannelData(0);
+for (let i = 0; i < len; i++) ch[i] = (Math.random() * 2 - 1) * Math.sin((i / len) * Math.PI);
+const src = this.ctx.createBufferSource(); src.buffer = buf;
+const flt = this.ctx.createBiquadFilter(); flt.type = 'bandpass'; flt.frequency.setValueAtTime(520, now); flt.frequency.exponentialRampToValueAtTime(880, now + dur); flt.Q.setValueAtTime(2.5, now);
+const g = this.ctx.createGain(); g.gain.setValueAtTime(0.05, now); g.gain.exponentialRampToValueAtTime(0.001, now + dur);
+src.connect(flt); flt.connect(g); g.connect(this.ctx.destination); src.start(now);
+} catch (e) {}
+}
+playItem(isGold = false) {
+if (this.muted || !this.ctx) return;
+try {
+const now = this.ctx.currentTime, freqs = isGold ? [587.33, 880, 1174.66] : [523.25, 783.99];
+freqs.forEach((f, idx) => {
+const o = this.ctx.createOscillator(), g = this.ctx.createGain();
+o.type = 'sine'; o.frequency.setValueAtTime(f, now + idx * 0.06);
+g.gain.setValueAtTime(0.11, now + idx * 0.06); g.gain.exponentialRampToValueAtTime(0.001, now + idx * 0.06 + 0.22);
+o.connect(g); g.connect(this.ctx.destination); o.start(now + idx * 0.06); o.stop(now + idx * 0.06 + 0.24);
+});
+} catch (e) {}
+}
+playWarning() {
+if (this.muted || !this.ctx) return;
+try {
+const now = this.ctx.currentTime, o = this.ctx.createOscillator(), g = this.ctx.createGain();
+o.type = 'sawtooth'; o.frequency.setValueAtTime(460, now); o.frequency.setValueAtTime(540, now + 0.045);
+g.gain.setValueAtTime(0.032, now); g.gain.exponentialRampToValueAtTime(0.001, now + 0.095);
+o.connect(g); g.connect(this.ctx.destination); o.start(now); o.stop(now + 0.1);
+} catch (e) {}
+}
+playTear() {
+if (this.muted || !this.ctx) return;
+try {
+const now = this.ctx.currentTime, len = Math.floor(this.ctx.sampleRate * 0.35), buf = this.ctx.createBuffer(1, len, this.ctx.sampleRate), ch = buf.getChannelData(0);
+for (let i = 0; i < len; i++) ch[i] = (Math.random() * 2 - 1) * Math.exp(-i / (len * 0.35));
+const src = this.ctx.createBufferSource(); src.buffer = buf;
+const flt = this.ctx.createBiquadFilter(); flt.type = 'bandpass'; flt.frequency.setValueAtTime(1400, now); flt.frequency.exponentialRampToValueAtTime(300, now + 0.35);
+const g = this.ctx.createGain(); g.gain.setValueAtTime(0.32, now); g.gain.exponentialRampToValueAtTime(0.01, now + 0.35);
+src.connect(flt); flt.connect(g); g.connect(this.ctx.destination); src.start(now);
+} catch (e) {}
+}
+playFanfare(isFirst = true) {
+if (this.muted || !this.ctx) return;
+try {
+const now = this.ctx.currentTime + 0.18;
+const notes = isFirst
+? [{ freq: 523.25, time: 0.0, dur: 0.12 }, { freq: 659.25, time: 0.11, dur: 0.12 }, { freq: 783.99, time: 0.22, dur: 0.12 }, { freq: 1046.50, time: 0.34, dur: 0.38 }, { freq: 880.00, time: 0.56, dur: 0.12 }, { freq: 1046.50, time: 0.70, dur: 0.45 }]
+: [{ freq: 523.25, time: 0.0, dur: 0.12 }, { freq: 659.25, time: 0.12, dur: 0.12 }, { freq: 783.99, time: 0.24, dur: 0.28 }];
+notes.forEach(n => {
+const o = this.ctx.createOscillator(), g = this.ctx.createGain();
+o.type = 'triangle'; o.frequency.setValueAtTime(n.freq, now + n.time);
+g.gain.setValueAtTime(0.001, now + n.time); g.gain.linearRampToValueAtTime(0.15, now + n.time + 0.02); g.gain.exponentialRampToValueAtTime(0.001, now + n.time + n.dur);
+o.connect(g); g.connect(this.ctx.destination); o.start(now + n.time); o.stop(now + n.time + n.dur + 0.02);
+});
+} catch (e) {}
+}
+}
+const sound = new SoundFX();
+const RANKING_STORAGE_KEY = 'tp_longrun_ranking_top5_v1';
+const LEGACY_BEST_KEY = 'tp_longrun_best_v1';
+function formatNowDateTime() {
+const d = new Date();
+return ${String(d.getMonth() + 1).padStart(2, '0')}/${String(d.getDate()).padStart(2, '0')} ${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')};
+}
+function loadRanking() {
+try {
+const raw = localStorage.getItem(RANKING_STORAGE_KEY);
+if (raw) {
+const p = JSON.parse(raw);
+if (Array.isArray(p)) return p.filter(x => typeof x.distance === 'number' && !Number.isNaN(x.distance)).map(x => ({ distance: Math.round(x.distance * 10) / 10, dateStr: x.dateStr || '--/-- --:--', id: x.id || String(Math.random()) })).sort((a, b) => b.distance - a.distance).slice(0, 5);
+}
+const leg = parseFloat(localStorage.getItem(LEGACY_BEST_KEY) || '0');
+if (leg > 0) { const init = [{ distance: Math.round(leg * 10) / 10, dateStr: formatNowDateTime(), id: 'legacy-best' }]; saveRanking(init); return init; }
+} catch (e) {}
+return [];
+}
+function saveRanking(list) { try { localStorage.setItem(RANKING_STORAGE_KEY, JSON.stringify(list.slice(0, 5))); } catch (e) {} }
+function clearRanking() { rankingList = []; try { localStorage.removeItem(RANKING_STORAGE_KEY); localStorage.removeItem(LEGACY_BEST_KEY); } catch (e) {} renderRankingBoards(); updateBestScoreUI(); }
+function recordScoreToRanking(rawDist) {
+const rounded = Math.round(rawDist * 10) / 10;
+if (rounded <= 0) return { rank: null, isFirstPlace: false };
+const prevTop = rankingList.length > 0 ? rankingList[0].distance : 0;
+const id = ${Date.now()}-${Math.random().toString(36).slice(2, 6)};
+const combined = [...rankingList, { distance: rounded, dateStr: formatNowDateTime(), id }].sort((a, b) => b.distance - a.distance).slice(0, 5);
+const idx = combined.findIndex(x => x.id === id);
+const rank = idx !== -1 ? idx + 1 : null;
+rankingList = combined; saveRanking(rankingList); renderRankingBoards(); updateBestScoreUI();
+return { rank, isFirstPlace: rank === 1 && rounded > prevTop };
+}
+function renderRankingBoards(highlightId = null) {
+const containers = [document.getElementById('startRankingList'), document.getElementById('gameOverRankingList')];
+const medals = ['🥇', '🥈', '🥉', '4.', '5.'];
+containers.forEach(c => {
+if (!c) return; c.innerHTML = '';
+if (rankingList.length === 0) {
+const el = document.createElement('div'); el.className = 'text-center py-3 text-slate-400 font-bold text-[11px]'; el.textContent = 'まだ記録がありません。最初の1位を目指そう！'; c.appendChild(el); return;
+}
+for (let i = 0; i < 5; i++) {
+const item = rankingList[i], row = document.createElement('div'), hi = item && highlightId && item.id === highlightId;
+row.className = flex items-center justify-between px-2.5 py-1 rounded-xl ${hi ? 'bg-amber-200/80 border border-amber-400 font-extrabold text-slate-900' : item ? 'bg-white/85 text-slate-700 font-bold' : 'bg-white/40 text-slate-400 font-medium'};
+const l = document.createElement('span'); l.className = 'flex items-center gap-1.5'; l.textContent = ${medals[i]} ${item ? ${item.distance.toFixed(1)}m : '---'};
+const r = document.createElement('span'); r.className = 'text-[10px] text-slate-400 tabular-nums'; r.textContent = item ? item.dateStr : '';
+row.appendChild(l); row.appendChild(r); c.appendChild(row);
+}
+});
+}
+const canvas = document.getElementById('gameCanvas'), ctx = canvas.getContext('2d'), wrapper = document.getElementById('game-wrapper');
+const hud = document.getElementById('hud'), distanceDisplay = document.getElementById('distanceDisplay'), hudBestDisplay = document.getElementById('hudBestDisplay');
+const tensionBar = document.getElementById('tensionBar'), tensionPercent = document.getElementById('tensionPercent'), tensionContainer = document.getElementById('tensionContainer'), tensionLabel = document.getElementById('tensionLabel'), touchHint = document.getElementById('touchHint');
+const startScreen = document.getElementById('startScreen'), gameOverScreen = document.getElementById('gameOverScreen'), finalDistanceEl = document.getElementById('finalDistance');
+const failReasonBadge = document.getElementById('failReasonBadge'), recordBanner = document.getElementById('recordBanner'), rankComment = document.getElementById('rankComment');
+const resetConfirmModal = document.getElementById('resetConfirmModal'), toastMsg = document.getElementById('toastMsg');
+const startBtn = document.getElementById('startBtn'), retryBtn = document.getElementById('retryBtn'), shareBtn = document.getElementById('shareBtn');
+const confirmResetBtn = document.getElementById('confirmResetBtn'), cancelResetBtn = document.getElementById('cancelResetBtn');
+const soundToggleBtn = document.getElementById('soundToggleBtn'), soundOnIcon = document.getElementById('soundOnIcon'), soundOffIcon = document.getElementById('soundOffIcon');
+let rankingList = loadRanking(), lastRecordedEntryId = null, width = 0, height = 0, dpr = 1;
+let gameState = 'START', distance = 0, speed = 230, rollAngle = 0, rollRadius = 38, durability = 100, lastWarningTime = 0;
+let starTimer = 0;
+const STAR_DURATION = 7.0;
+let rainbowHue = 0;
+const paper = { x: 0, y: 0, targetX: 0, vx: 0, width: 34, trail: [] };
+const input = { isPointerDown: false, lastPointerX: 0, leftPressed: false, rightPressed: false };
+let entities = [], particles = [], floatingTexts = [], spawnTimer = 0, lastTime = 0, tearPoint = null;
+function getTopScore() { return rankingList.length > 0 ? rankingList[0].distance : 0; }
+function updateBestScoreUI() { hudBestDisplay.textContent = getTopScore().toFixed(1); }
+function showToast(msg) { toastMsg.textContent = msg; toastMsg.classList.remove('hidden'); setTimeout(() => toastMsg.classList.add('hidden'), 2200); }
+function getRollY() { return Math.max(115, height * 0.16); }
+function initPaperTrail() {
+paper.trail = []; const sy = getRollY() + 18, steps = 28;
+for (let i = 0; i <= steps; i++) { const t = i / steps; paper.trail.push({ x: paper.x, y: sy + (paper.y - sy) * t }); }
+}
+function resizeCanvas() {
+try {
+const rect = wrapper.getBoundingClientRect();
+dpr = Math.min(window.devicePixelRatio || 1, 2); width = Math.max(280, rect.width); height = Math.max(400, rect.height);
+canvas.width = Math.floor(width * dpr); canvas.height = Math.floor(height * dpr); ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+if (gameState === 'START') { paper.x = width / 2; paper.targetX = width / 2; paper.y = height * 0.44; initPaperTrail(); }
+} catch (e) {}
+}
+function startGame() {
+sound.init(); sound.setSpeedRatio(0); sound.startPlayBgm();
+gameState = 'PLAYING'; distance = 0; speed = 230; durability = 100; rollRadius = 38; starTimer = 0;
+entities = []; particles = []; floatingTexts = []; tearPoint = null; lastRecordedEntryId = null; spawnTimer = 0.65;
+paper.x = width / 2; paper.targetX = width / 2; paper.vx = 0; paper.y = height * 0.45; initPaperTrail();
+startScreen.classList.add('hidden'); gameOverScreen.classList.add('hidden'); resetConfirmModal.classList.add('hidden');
+hud.classList.remove('hidden'); touchHint.classList.remove('hidden'); updateHUD();
+}
+function activateStarMode() {
+const wasStar = starTimer > 0;
+starTimer = STAR_DURATION;
+durability = Math.min(100, durability + 25);
+sound.playStarGet();
+if (!wasStar) sound.startStarBgm();
+addFloatingText(paper.x, paper.y - 25, '🌟 無敵レインボーモード!!', '#eab308');
+for (let i = 0; i < 18; i++) {
+particles.push({
+x: paper.x, y: paper.y,
+vx: (Math.random() - 0.5) * 240, vy: (Math.random() - 0.5) * 240,
+size: 7 + Math.random() * 5, rot: Math.random() * Math.PI * 2, vRot: 8,
+color: hsl(${Math.random() * 360}, 95%, 60%), life: 0.75, isStar: true
+});
+}
+}
+function triggerGameOver(reasonText, bx = paper.x, by = paper.y) {
+if (gameState !== 'PLAYING') return;
+gameState = 'GAMEOVER'; starTimer = 0; sound.stopBgm(); sound.playTear(); tearPoint = { x: bx, y: by };
+for (let i = 0; i < 24; i++) particles.push({ x: bx + (Math.random() - 0.5) * 30, y: by + (Math.random() - 0.5) * 20, vx: (Math.random() - 0.5) * 260, vy: -60 - Math.random() * 180, size: 6 + Math.random() * 8, rot: Math.random() * Math.PI * 2, vRot: (Math.random() - 0.5) * 10, color: i % 3 === 0 ? '#bae6fd' : '#ffffff', life: 1.2 + Math.random() * 0.6 });
+const roundedDist = Math.round(distance * 10) / 10, { rank, isFirstPlace } = recordScoreToRanking(roundedDist);
+if (rankingList.length > 0 && rank !== null) lastRecordedEntryId = rankingList[rank - 1]?.id || null;
+renderRankingBoards(lastRecordedEntryId);
+recordBanner.classList.remove('hidden');
+if (isFirstPlace) { recordBanner.className = 'mb-2.5 py-1.5 px-3 rounded-2xl font-black text-xs bg-gradient-to-r from-amber-300 via-yellow-200 to-amber-300 text-amber-900 border-2 border-amber-400 shadow-sm record-banner-anim'; recordBanner.textContent = '🎉 NEW RECORD! 歴代1位を更新しました！'; sound.playFanfare(true); }
+else if (rank !== null) { recordBanner.className = 'mb-2.5 py-1.5 px-3 rounded-2xl font-extrabold text-xs bg-sky-100 text-sky-800 border-2 border-sky-300 record-banner-anim'; recordBanner.textContent = ⭐ TOP 5 ランクイン！（第${rank}位）; sound.playFanfare(false); }
+else recordBanner.classList.add('hidden');
+failReasonBadge.textContent = reasonText; finalDistanceEl.textContent = roundedDist.toFixed(1); rankComment.textContent = getRankTitle(roundedDist);
+touchHint.classList.add('hidden'); setTimeout(() => gameOverScreen.classList.remove('hidden'), 520);
+}
+function getRankTitle(m) {
+if (m < 10) return '称号：もったいない精神の見習い'; if (m < 25) return '称号：一般家庭のロール使い'; if (m < 50) return '称号：繊細な指先のペーパー職人';
+if (m < 80) return '称号：トイレの魔術師'; if (m < 120) return '称号：伝説のロングロールマスター'; return '称号：神に選ばれし無限ペーパー神';
+}
+function spawnEntity() {
+const margin = 42, sx = margin + Math.random() * (width - margin * 2), sy = height + 50, r = Math.random();
+if (r < 0.28) entities.push({ type: 'puddle', x: sx, y: sy, radius: 26 + Math.random() * 10, wobble: Math.random() * Math.PI * 2 });
+else if (r < 0.52) { const mv = distance > 18 && Math.random() < 0.45; entities.push({ type: 'scissors', x: sx, y: sy, radius: 22, vx: mv ? (Math.random() < 0.5 ? 75 : -75) : 0, snipPhase: Math.random() * Math.PI * 2 }); }
+else if (r < 0.70) { const fl = Math.random() < 0.5; entities.push({ type: 'catpaw', x: fl ? -30 : width + 30, y: sy, fromLeft: fl, reach: width * (0.34 + Math.random() * 0.14), phase: Math.random() * Math.PI * 2, radius: 22 }); }
+else if (r < 0.81) { const br = sx < width / 2; entities.push({ type: 'fan', x: br ? 34 : width - 34, y: sy, blowRight: br, radius: 26, bladeAngle: 0 }); }
+else if (r < 0.89) entities.push({ type: 'repair', x: sx, y: sy, radius: 20, bob: 0 });
+else if (r < 0.945) entities.push({ type: 'gold', x: sx, y: sy, radius: 21, bob: 0 });
+else entities.push({ type: 'star', x: sx, y: sy, radius: 22, bob: 0, spin: 0 });
+}
+function addFloatingText(x, y, text, color = '#0284c7') { floatingTexts.push({ x, y, text, color, life: 1.0 }); }
+function update(dt) {
+rainbowHue = (rainbowHue + 420 * dt) % 360;
+for (let i = particles.length - 1; i >= 0; i--) {
+const p = particles[i]; p.x += p.vx * dt; p.y += p.vy * dt;
+if (!p.isStar) p.vy += 420 * dt;
+p.rot += p.vRot * dt; p.life -= dt; if (p.life <= 0) particles.splice(i, 1);
+}
+for (let i = floatingTexts.length - 1; i >= 0; i--) { const ft = floatingTexts[i]; ft.y -= 45 * dt; ft.life -= dt; if (ft.life <= 0) floatingTexts.splice(i, 1); }
+if (gameState !== 'PLAYING') { if (gameState === 'START') rollAngle += 1.2 * dt; return; }
+const isStar = starTimer > 0;
+if (isStar) {
+starTimer -= dt;
+if (Math.random() < 0.65) {
+particles.push({
+x: paper.x + (Math.random() - 0.5) * 32, y: paper.y - Math.random() * 40,
+vx: (Math.random() - 0.5) * 70, vy: -40 - Math.random() * 60,
+size: 5 + Math.random() * 4, rot: Math.random() * Math.PI, vRot: 6,
+color: hsl(${(rainbowHue + Math.random() * 120) % 360}, 95%, 60%), life: 0.45, isStar: true
+});
+}
+if (starTimer <= 0) {
+starTimer = 0;
+sound.startPlayBgm();
+addFloatingText(paper.x, paper.y - 15, '無敵タイム終了', '#64748b');
+}
+}
+const baseSpeed = Math.min(540, 230 + distance * 2.1);
+speed = isStar ? baseSpeed * 1.25 : baseSpeed;
+distance += (speed / 42) * dt;
+rollAngle += (speed / 28) * dt;
+rollRadius = Math.max(18, 38 - distance * 0.08);
+const sRatio = (baseSpeed - 230) / 310;
+sound.setSpeedRatio(sRatio);
+sound.playRollTick(sRatio);
+if (input.leftPressed) paper.targetX -= 420 * dt;
+if (input.rightPressed) paper.targetX += 420 * dt;
+paper.targetX = Math.max(26, Math.min(width - 26, paper.targetX));
+const prevX = paper.x; paper.x += (paper.targetX - paper.x) * (1 - Math.exp(-16 * dt)); paper.vx = (paper.x - prevX) / Math.max(dt, 0.001);
+if (!isStar) {
+const absVx = Math.abs(paper.vx), stretchRatio = Math.abs(paper.x - width / 2) / (width * 0.5);
+if (absVx > 335) durability -= (30 + ((absVx - 335) / 460) * 68) * dt;
+else durability = Math.min(100, durability + (stretchRatio > 0.75 ? 5 : 11) * dt);
+if (durability < 30 && performance.now() - lastWarningTime > 450) { sound.playWarning(); lastWarningTime = performance.now(); }
+if (durability <= 0) { durability = 0; updateHUD(); triggerGameOver('ビリッ！急操作で紙がちぎれた！', paper.x, paper.y - 30); return; }
+}
+const rollBottomY = getRollY() + rollRadius * 0.55, steps = paper.trail.length - 1;
+for (let i = 0; i <= steps; i++) {
+const t = i / steps, ease = t * t * (3 - 2 * t), wave = Math.sin(distance * 3 - t * 5) * (2.5 * t);
+paper.trail[i].y = rollBottomY + (paper.y - rollBottomY) * t;
+paper.trail[i].x += (((width / 2) + (paper.x - width / 2) * ease + wave) - paper.trail[i].x) * Math.min(1, dt * (12 + t * 14));
+}
+spawnTimer -= dt;
+if (spawnTimer <= 0) { spawnEntity(); spawnTimer = Math.max(0.48, 1.18 - distance * 0.0045) * (0.8 + Math.random() * 0.4); }
+for (let i = entities.length - 1; i >= 0; i--) {
+const e = entities[i]; e.y -= speed * dt;
+if (e.type === 'puddle') e.wobble += 4 * dt;
+else if (e.type === 'scissors') { e.snipPhase += 12 * dt; e.x += e.vx * dt; if (e.x < 35 || e.x > width - 35) e.vx *= -1; }
+else if (e.type === 'catpaw') { e.phase += 4.5 * dt; e.x = e.fromLeft ? (-15 + (Math.sin(e.phase) * 0.5 + 0.5) * e.reach) : (width + 15 - (Math.sin(e.phase) * 0.5 + 0.5) * e.reach); }
+else if (e.type === 'fan') {
+e.bladeAngle += 18 * dt;
+if (!isStar && Math.abs(e.y - paper.y) < 48) { paper.targetX += (e.blowRight ? 185 : -185) * dt; durability -= 14 * dt; sound.playWindWhoosh(); }
+}
+else if (e.type === 'repair' || e.type === 'gold') e.bob += 5 * dt;
+else if (e.type === 'star') { e.bob += 6 * dt; e.spin += 4 * dt; }
+const pts = [{ x: paper.x, y: paper.y }, paper.trail[Math.floor(paper.trail.length * 0.78)]];
+let hit = false;
+for (const pt of pts) { if (pt && Math.hypot(pt.x - e.x, pt.y - e.y) < e.radius + paper.width * 0.36) { hit = true; break; } }
+if (hit) {
+if (e.type === 'star') {
+activateStarMode();
+entities.splice(i, 1);
+continue;
+}
+if (e.type === 'repair') { durability = Math.min(100, durability + 35); sound.playItem(false); addFloatingText(e.x, e.y - 10, '耐久 +35%!', '#10b981'); entities.splice(i, 1); continue; }
+if (e.type === 'gold') { distance += 5.0; durability = Math.min(100, durability + 20); sound.playItem(true); addFloatingText(e.x, e.y - 10, '+5.0m ボーナス!', '#f59e0b'); entities.splice(i, 1); continue; }
+if (isStar && (e.type === 'puddle' || e.type === 'scissors' || e.type === 'catpaw' || e.type === 'fan')) {
+distance += 1.0;
+sound.playSmash();
+addFloatingText(e.x, e.y - 10, '💥 撃破 +1.0m!', '#ec4899');
+for (let k = 0; k < 10; k++) {
+particles.push({
+x: e.x, y: e.y, vx: (Math.random() - 0.5) * 280, vy: -80 - Math.random() * 180,
+size: 6 + Math.random() * 5, rot: Math.random() * 6, vRot: 9,
+color: hsl(${(rainbowHue + k * 36) % 360}, 90%, 60%), life: 0.65, isStar: true
+});
+}
+entities.splice(i, 1);
+continue;
+}
+if (e.type === 'puddle') { triggerGameOver('ビチャッ！水たまりでふやけた！', e.x, e.y); return; }
+if (e.type === 'scissors') { triggerGameOver('チョキン！ハサミで切られた！', e.x, e.y); return; }
+if (e.type === 'catpaw') { triggerGameOver('ニャー！猫に引きちぎられた！', e.x, e.y); return; }
+}
+if (e.y < -80) entities.splice(i, 1);
+}
+updateHUD();
+}
+function updateHUD() {
+distanceDisplay.textContent = distance.toFixed(1);
+tensionContainer.classList.remove('border-rose-400', 'danger-pulse', 'border-sky-200', 'star-hud-glow');
+if (starTimer > 0) {
+const starPct = Math.max(0, Math.min(100, Math.round((starTimer / STAR_DURATION) * 100)));
+tensionLabel.textContent = 🌟 無敵レインボー中！（残り ${starTimer.toFixed(1)}秒）;
+tensionPercent.textContent = '無敵!';
+tensionPercent.className = 'text-amber-500 font-black';
+tensionBar.style.width = ${starPct}%;
+tensionBar.className = 'h-full bg-gradient-to-r from-rose-500 via-amber-400 to-sky-400 rounded-full transition-all duration-75';
+tensionContainer.classList.add('star-hud-glow');
+return;
+}
+tensionLabel.textContent = '🧻 紙の耐久度（ちぎれ注意・急操作NG！）';
+const pct = Math.max(0, Math.min(100, Math.round(durability)));
+tensionPercent.textContent = ${pct}%; tensionBar.style.width = ${pct}%;
+if (pct <= 30) { tensionBar.className = 'h-full bg-gradient-to-r from-rose-500 to-red-600 rounded-full transition-all duration-75'; tensionPercent.className = 'text-rose-600 font-extrabold'; tensionContainer.classList.add('border-rose-400', 'danger-pulse'); }
+else if (pct <= 60) { tensionBar.className = 'h-full bg-gradient-to-r from-amber-400 to-orange-400 rounded-full transition-all duration-75'; tensionPercent.className = 'text-amber-600 font-extrabold'; tensionContainer.classList.add('border-sky-200'); }
+else { tensionBar.className = 'h-full bg-gradient-to-r from-emerald-400 to-sky-400 rounded-full transition-all duration-75'; tensionPercent.className = 'text-sky-600 font-extrabold'; tensionContainer.classList.add('border-sky-200'); }
+}
+function draw() {
+ctx.clearRect(0, 0, width, height);
+const isStar = starTimer > 0;
+const offset = (distance * 42) % 90; ctx.save();
+ctx.strokeStyle = isStar ? hsla(${rainbowHue}, 85%, 65%, 0.45) : 'rgba(125, 211, 252, 0.35)';
+ctx.lineWidth = 2; ctx.setLineDash([8, 12]);
+for (let x = 45; x < width; x += 90) { ctx.beginPath(); ctx.moveTo(x, -offset); ctx.lineTo(x, height); ctx.stroke(); }
+ctx.restore();
+entities.forEach(drawEntity);
+if (gameState !== 'GAMEOVER') drawPaperRibbon(); else if (tearPoint) drawTornPaper();
+drawPaperRoll();
+particles.forEach(p => {
+ctx.save(); ctx.translate(p.x, p.y); ctx.rotate(p.rot);
+ctx.fillStyle = p.color;
+if (p.isStar) {
+drawStarShape(ctx, 0, 0, 5, p.size, p.size * 0.45);
+ctx.fill();
+} else {
+ctx.strokeStyle = '#cbd5e1'; ctx.lineWidth = 1;
+ctx.fillRect(-p.size / 2, -p.size / 2, p.size, p.size * 0.7);
+ctx.strokeRect(-p.size / 2, -p.size / 2, p.size, p.size * 0.7);
+}
+ctx.restore();
+});
+floatingTexts.forEach(ft => { ctx.save(); ctx.globalAlpha = Math.max(0, ft.life); ctx.font = '800 15px "M PLUS Rounded 1c", sans-serif'; ctx.textAlign = 'center'; ctx.lineWidth = 4; ctx.strokeStyle = '#ffffff'; ctx.strokeText(ft.text, ft.x, ft.y); ctx.fillStyle = ft.color; ctx.fillText(ft.text, ft.x, ft.y); ctx.restore(); });
+}
+function drawStarShape(c, cx, cy, spikes, outerR, innerR) {
+let rot = Math.PI / 2 * 3, x = cx, y = cy, step = Math.PI / spikes;
+c.beginPath(); c.moveTo(cx, cy - outerR);
+for (let i = 0; i < spikes; i++) {
+x = cx + Math.cos(rot) * outerR; y = cy + Math.sin(rot) * outerR; c.lineTo(x, y); rot += step;
+x = cx + Math.cos(rot) * innerR; y = cy + Math.sin(rot) * innerR; c.lineTo(x, y); rot += step;
+}
+c.lineTo(cx, cy - outerR); c.closePath();
+}
+function drawPaperRibbon() {
+if (paper.trail.length < 2) return;
+const halfW = paper.width / 2, dangerRatio = Math.max(0, (55 - durability) / 55), isStar = starTimer > 0;
+ctx.save();
+if (isStar) {
+ctx.shadowColor = hsl(${rainbowHue}, 95%, 55%);
+ctx.shadowBlur = 16;
+}
+ctx.beginPath();
+paper.trail.forEach((pt, i) => i === 0 ? ctx.moveTo(pt.x - halfW + 4, pt.y + 6) : ctx.lineTo(pt.x - halfW + 4, pt.y + 6));
+for (let i = paper.trail.length - 1; i >= 0; i--) ctx.lineTo(paper.trail[i].x + halfW + 4, paper.trail[i].y + 6);
+ctx.closePath(); ctx.fillStyle = 'rgba(15, 23, 42, 0.08)'; ctx.fill();
+ctx.beginPath();
+paper.trail.forEach((pt, i) => i === 0 ? ctx.moveTo(pt.x - halfW, pt.y) : ctx.lineTo(pt.x - halfW, pt.y));
+const tip = paper.trail[paper.trail.length - 1];
+for (let t = 0; t <= 5; t++) ctx.lineTo((tip.x - halfW) + (paper.width * (t / 5)), tip.y + (t % 2 === 0 ? 0 : 4));
+for (let i = paper.trail.length - 1; i >= 0; i--) ctx.lineTo(paper.trail[i].x + halfW, paper.trail[i].y);
+ctx.closePath();
+if (isStar) {
+const topPt = paper.trail[0];
+const rbGrad = ctx.createLinearGradient(0, topPt.y, 0, tip.y);
+for (let s = 0; s <= 5; s++) {
+rbGrad.addColorStop(s / 5, hsl(${(rainbowHue + s * 60) % 360}, 95%, 78%));
+}
+ctx.fillStyle = rbGrad;
+ctx.fill();
+ctx.lineWidth = 2.5;
+ctx.strokeStyle = hsl(${(rainbowHue + 180) % 360}, 95%, 50%);
+ctx.stroke();
+} else {
+const c = Math.round(255 - dangerRatio * 145); ctx.fillStyle = rgb(255, ${c}, ${c}); ctx.fill();
+ctx.lineWidth = 2; ctx.strokeStyle = dangerRatio > 0.4 ? '#f43f5e' : '#cbd5e1'; ctx.stroke();
+}
+ctx.shadowBlur = 0;
+ctx.strokeStyle = isStar ? 'rgba(255,255,255,0.75)' : (dangerRatio > 0.4 ? 'rgba(244, 63, 94, 0.5)' : 'rgba(148, 163, 184, 0.55)');
+ctx.lineWidth = 1.5; ctx.setLineDash([3, 3]);
+const po = ((distance * 42) % 38) * 0.15;
+for (let i = 2; i < paper.trail.length - 1; i += 4) { const pt = paper.trail[i]; ctx.beginPath(); ctx.moveTo(pt.x - halfW + 2, pt.y + po); ctx.lineTo(pt.x + halfW - 2, pt.y + po); ctx.stroke(); }
+ctx.setLineDash([]);
+ctx.beginPath(); ctx.arc(tip.x, tip.y - 6, 7, 0, Math.PI * 2);
+ctx.fillStyle = isStar ? hsla(${rainbowHue}, 95%, 55%, 0.45) : (dangerRatio > 0.4 ? 'rgba(244, 63, 94, 0.25)' : 'rgba(14, 165, 233, 0.22)');
+ctx.fill();
+ctx.restore();
+}
+function drawTornPaper() {
+const halfW = paper.width / 2, topPt = paper.trail[0]; if (!topPt) return;
+ctx.save(); ctx.beginPath(); ctx.moveTo(topPt.x - halfW, topPt.y); ctx.lineTo(topPt.x - halfW, topPt.y + 42); ctx.lineTo(topPt.x - 6, topPt.y + 34); ctx.lineTo(topPt.x + 4, topPt.y + 46); ctx.lineTo(topPt.x + halfW, topPt.y + 36); ctx.lineTo(topPt.x + halfW, topPt.y); ctx.closePath();
+ctx.fillStyle = '#ffffff'; ctx.fill(); ctx.strokeStyle = '#cbd5e1'; ctx.lineWidth = 2; ctx.stroke(); ctx.restore();
+}
+function drawPaperRoll() {
+const cx = width / 2, cy = getRollY(), rollWidth = 86, r = rollRadius, isStar = starTimer > 0;
+ctx.save(); ctx.strokeStyle = '#94a3b8'; ctx.lineWidth = 6; ctx.lineCap = 'round';
+ctx.beginPath(); ctx.moveTo(cx - rollWidth / 2 - 12, cy - 26); ctx.lineTo(cx - rollWidth / 2 - 12, cy); ctx.lineTo(cx + rollWidth / 2 + 12, cy); ctx.lineTo(cx + rollWidth / 2 + 12, cy - 26); ctx.stroke();
+ctx.fillStyle = 'rgba(15, 23, 42, 0.1)'; ctx.beginPath(); ctx.roundRect(cx - rollWidth / 2 + 3, cy - r + 5, rollWidth, r * 2, 10); ctx.fill();
+const grad = ctx.createLinearGradient(0, cy - r, 0, cy + r);
+if (isStar) {
+grad.addColorStop(0, hsl(${rainbowHue}, 95%, 75%));
+grad.addColorStop(0.5, '#ffffff');
+grad.addColorStop(1, hsl(${(rainbowHue + 180) % 360}, 95%, 75%));
+} else {
+grad.addColorStop(0, '#e2e8f0'); grad.addColorStop(0.25, '#ffffff'); grad.addColorStop(0.75, '#f8fafc'); grad.addColorStop(1, '#cbd5e1');
+}
+ctx.fillStyle = grad; ctx.strokeStyle = isStar ? hsl(${rainbowHue}, 90%, 50%) : '#94a3b8'; ctx.lineWidth = 2;
+ctx.beginPath(); ctx.roundRect(cx - rollWidth / 2, cy - r, rollWidth, r * 2, 8); ctx.fill(); ctx.stroke();
+ctx.save(); ctx.beginPath(); ctx.roundRect(cx - rollWidth / 2, cy - r, rollWidth, r * 2, 8); ctx.clip();
+ctx.strokeStyle = 'rgba(148, 163, 184, 0.35)'; ctx.lineWidth = 1.5; ctx.setLineDash([4, 4]);
+for (let k = -2; k <= 2; k++) { const y = cy + Math.cos((rollAngle + k * 0.9) % Math.PI) * (r * 0.88); ctx.beginPath(); ctx.moveTo(cx - rollWidth / 2, y); ctx.lineTo(cx + rollWidth / 2, y); ctx.stroke(); }
+ctx.restore();
+const sideX = cx + rollWidth / 2;
+ctx.fillStyle = '#f1f5f9'; ctx.strokeStyle = '#94a3b8'; ctx.lineWidth = 2; ctx.beginPath(); ctx.ellipse(sideX, cy, 11, r, 0, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
+ctx.fillStyle = '#b45309'; ctx.beginPath(); ctx.ellipse(sideX, cy, 4.5, 11, 0, 0, Math.PI * 2); ctx.fill(); ctx.restore();
+}
+function drawEntity(e) {
+ctx.save(); ctx.translate(e.x, e.y);
+if (e.type === 'puddle') {
+ctx.scale(1 + Math.sin(e.wobble) * 0.06, 1 + Math.cos(e.wobble) * 0.06);
+ctx.fillStyle = 'rgba(56, 189, 248, 0.78)'; ctx.strokeStyle = '#0284c7'; ctx.lineWidth = 2.5; ctx.beginPath(); ctx.arc(0, 0, e.radius, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
+ctx.fillStyle = 'rgba(255, 255, 255, 0.75)'; ctx.beginPath(); ctx.ellipse(-e.radius * 0.3, -e.radius * 0.3, e.radius * 0.28, e.radius * 0.14, -0.5, 0, Math.PI * 2); ctx.fill();
+ctx.font = 'bold 11px "M PLUS Rounded 1c", sans-serif'; ctx.fillStyle = '#0369a1'; ctx.textAlign = 'center'; ctx.fillText('みず', 0, 4);
+} else if (e.type === 'scissors') {
+const oa = 0.22 + Math.abs(Math.sin(e.snipPhase)) * 0.35; ctx.rotate(-Math.PI / 2);
+[oa, -oa].forEach((ang, idx) => { ctx.save(); ctx.rotate(ang); ctx.fillStyle = idx === 0 ? '#cbd5e1' : '#94a3b8'; ctx.strokeStyle = '#475569'; ctx.lineWidth = 2; ctx.beginPath(); ctx.moveTo(0, -3); ctx.lineTo(24, 0); ctx.lineTo(0, 4); ctx.closePath(); ctx.fill(); ctx.stroke(); ctx.restore(); });
+ctx.strokeStyle = '#ef4444'; ctx.lineWidth = 4; ctx.beginPath(); ctx.arc(-10, -8, 6, 0, Math.PI * 2); ctx.stroke(); ctx.beginPath(); ctx.arc(-10, 8, 6, 0, Math.PI * 2); ctx.stroke();
+} else if (e.type === 'catpaw') {
+ctx.scale(e.fromLeft ? 1 : -1, 1);
+ctx.fillStyle = '#fef3c7'; ctx.strokeStyle = '#d97706'; ctx.lineWidth = 2.5; ctx.beginPath(); ctx.roundRect(-180, -16, 185, 32, 16); ctx.fill(); ctx.stroke();
+ctx.fillStyle = '#f59e0b'; for (let s = -140; s <= -35; s += 35) ctx.fillRect(s, -15, 10, 12);
+ctx.fillStyle = '#fb7185'; ctx.beginPath(); ctx.arc(0, 0, 7, 0, Math.PI * 2); ctx.fill();
+[[-7, -9], [2, -10], [8, -4], [4, 8]].forEach(([px, py]) => { ctx.beginPath(); ctx.arc(px, py, 3.2, 0, Math.PI * 2); ctx.fill(); });
+} else if (e.type === 'fan') {
+const dir = e.blowRight ? 1 : -1; ctx.strokeStyle = 'rgba(56, 189, 248, 0.55)'; ctx.lineWidth = 2; ctx.setLineDash([8, 8]);
+for (let row = -16; row <= 16; row += 16) { ctx.beginPath(); ctx.moveTo(dir * 26, row); ctx.lineTo(dir * (width * 0.65), row); ctx.stroke(); }
+ctx.setLineDash([]); ctx.fillStyle = '#e0f2fe'; ctx.strokeStyle = '#0284c7'; ctx.lineWidth = 2.5; ctx.beginPath(); ctx.arc(0, 0, 22, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
+ctx.save(); ctx.rotate(e.bladeAngle); ctx.fillStyle = '#38bdf8';
+for (let b = 0; b < 3; b++) { ctx.rotate((Math.PI * 2) / 3); ctx.beginPath(); ctx.ellipse(0, -9, 4, 8, 0, 0, Math.PI * 2); ctx.fill(); }
+ctx.restore();
+} else if (e.type === 'repair' || e.type === 'gold') {
+const isG = e.type === 'gold'; ctx.scale(1 + Math.sin(e.bob) * (isG ? 0.1 : 0.08), 1 + Math.sin(e.bob) * (isG ? 0.1 : 0.08));
+ctx.fillStyle = isG ? '#fef3c7' : '#d1fae5'; ctx.strokeStyle = isG ? '#f59e0b' : '#10b981'; ctx.lineWidth = isG ? 3 : 2.5; ctx.beginPath(); ctx.arc(0, 0, e.radius, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
+ctx.fillStyle = isG ? '#fbbf24' : '#ffffff'; ctx.strokeStyle = isG ? '#b45309' : '#059669'; ctx.lineWidth = 1.8; ctx.beginPath(); ctx.roundRect(-10, -8, 20, 16, 4); ctx.fill(); ctx.stroke();
+ctx.font = '800 10px "M PLUS Rounded 1c", sans-serif'; ctx.fillStyle = isG ? '#b45309' : '#047857'; ctx.textAlign = 'center'; ctx.fillText(isG ? '+5m' : '回復', 0, 16);
+} else if (e.type === 'star') {
+const sc = 1 + Math.sin(e.bob) * 0.14;
+ctx.scale(sc, sc);
+ctx.shadowColor = hsl(${rainbowHue}, 95%, 55%);
+ctx.shadowBlur = 12;
+ctx.fillStyle = 'rgba(255, 255, 255, 0.9)';
+ctx.strokeStyle = hsl(${rainbowHue}, 90%, 55%);
+ctx.lineWidth = 3;
+ctx.beginPath(); ctx.arc(0, 0, e.radius, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
+ctx.save();
+ctx.rotate(Math.sin(e.spin) * 0.25);
+drawStarShape(ctx, 0, 0, 5, 15, 7);
+ctx.fillStyle = '#facc15';
+ctx.fill();
+ctx.lineWidth = 2;
+ctx.strokeStyle = '#ca8a04';
+ctx.stroke();
+ctx.fillStyle = '#1e293b';
+ctx.fillRect(-3.5, -3, 2, 4.5);
+ctx.fillRect(1.5, -3, 2, 4.5);
+ctx.restore();
+}
+ctx.restore();
+}
+function gameLoop(ts) {
+if (!lastTime) lastTime = ts;
+const dt = Math.min(0.05, (ts - lastTime) / 1000); lastTime = ts;
+update(dt); draw(); requestAnimationFrame(gameLoop);
+}
+function handlePointerDown(e) { if (gameState !== 'PLAYING') return; sound.init(); input.isPointerDown = true; input.lastPointerX = e.touches ? e.touches[0].clientX : e.clientX; touchHint.classList.add('hidden'); }
+function handlePointerMove(e) { if (gameState !== 'PLAYING' || !input.isPointerDown) return; const cx = e.touches ? e.touches[0].clientX : e.clientX; paper.targetX += (cx - input.lastPointerX) * 1.15; input.lastPointerX = cx; }
+function handlePointerUp() { input.isPointerDown = false; }
+canvas.addEventListener('touchstart', handlePointerDown, { passive: true }); canvas.addEventListener('touchmove', handlePointerMove, { passive: true }); canvas.addEventListener('touchend', handlePointerUp); canvas.addEventListener('touchcancel', handlePointerUp);
+canvas.addEventListener('mousedown', handlePointerDown); window.addEventListener('mousemove', handlePointerMove); window.addEventListener('mouseup', handlePointerUp);
+window.addEventListener('keydown', e => { if (e.key === 'ArrowLeft' || e.key === 'a' || e.key === 'A') input.leftPressed = true; if (e.key === 'ArrowRight' || e.key === 'd' || e.key === 'D') input.rightPressed = true; });
+window.addEventListener('keyup', e => { if (e.key === 'ArrowLeft' || e.key === 'a' || e.key === 'A') input.leftPressed = false; if (e.key === 'ArrowRight' || e.key === 'd' || e.key === 'D') input.rightPressed = false; });
+startBtn.addEventListener('click', startGame); retryBtn.addEventListener('click', startGame);
+soundToggleBtn.addEventListener('click', () => { sound.init(); const m = sound.toggleMute(); soundOnIcon.classList.toggle('hidden', m); soundOffIcon.classList.toggle('hidden', !m); });
+document.querySelectorAll('[data-reset-trigger]').forEach(b => b.addEventListener('click', () => resetConfirmModal.classList.remove('hidden')));
+cancelResetBtn.addEventListener('click', () => resetConfirmModal.classList.add('hidden'));
+confirmResetBtn.addEventListener('click', () => { lastRecordedEntryId = null; clearRanking(); resetConfirmModal.classList.add('hidden'); showToast('TOP 5 ランキングをリセットしました'); });
+shareBtn.addEventListener('click', () => {
+const r = Math.round(distance * 10) / 10, txt = 🧻 トイレットペーパー・ロングランで【${r.toFixed(1)}m】伸ばしました！（1位記録: ${getTopScore().toFixed(1)}m） #トイレットペーパーゲーム;
+const ta = document.createElement('textarea'); ta.value = txt; document.body.appendChild(ta); ta.select();
+try { document.execCommand('copy'); showToast('クリップボードにコピーしました！'); } catch (e) { showToast('コピーできませんでした'); }
+document.body.removeChild(ta);
+});
+window.addEventListener('resize', resizeCanvas);
+window.onload = () => { renderRankingBoards(); updateBestScoreUI(); resizeCanvas(); requestAnimationFrame(gameLoop); };
+</script>
 </body>
 </html>
