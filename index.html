@@ -130,8 +130,8 @@ html,body{margin:0;width:100%;height:100%;overflow:hidden;touch-action:none;font
    <div>👆 <strong>左右にスライド</strong>して紙を誘導</div>
    <div>🧻 <strong>2枚重ねスタート</strong>：1回ヒットを肩代わり＆耐久軽減！</div>
    <div>⚡ 障害物の<strong>ギリギリすり抜け</strong>でボーナス！</div>
-   <div>🎊 節目で<strong>マイルストーン</strong>＆ボス撃破ごとに<strong>タイル色変化</strong>！</div>
-   <div>✂️ <strong>1,000mごと</strong>に巨大ボスが襲来！</div>
+   <div>🎊 距離の節目で<strong>マイルストーン＆背景変化</strong>！</div>
+   <div>✂️ <strong>1,000m突破で巨大ボス</strong>が襲来！</div>
   </div>
 
   <div class="bg-amber-50/80 border-2 border-amber-200 rounded-2xl p-3 mb-4 text-left">
@@ -149,7 +149,61 @@ html,body{margin:0;width:100%;height:100%;overflow:hidden;touch-action:none;font
 </div>
 
 <div id="gameOverScreen" class="hidden absolute inset-0 bg-slate-900/50 backdrop-blur-[2px] flex flex-col items-center justify-center p-4 z-20 overflow-y-auto">
- <div class="bg-white rounded-3
+ <div class="bg-white rounded-3xl p-5 w-full max-w-sm shadow-2xl border-4 border-rose-200 text-center my-auto">
+  <div id="failReasonBadge" class="inline-block bg-rose-100 text-rose-600 text-[11px] font-extrabold px-3 py-0.5 rounded-full mb-1.5">
+   ビリッ！紙がちぎれてしまった！
+  </div>
+
+  <h2 class="text-xl font-black text-slate-800 mb-2">記録発表</h2>
+  <div id="recordBanner" class="hidden mb-2.5 py-1.5 px-3 rounded-2xl font-extrabold text-xs"></div>
+
+  <div class="bg-sky-50 border-2 border-sky-200 rounded-2xl py-2.5 px-4 mb-2.5">
+   <div class="text-[11px] font-bold text-sky-600">今回伸ばした長さ</div>
+   <div class="text-3xl font-black text-slate-800">
+    <span id="finalDistance">0.0</span><span class="text-base text-sky-600">m</span>
+   </div>
+   <p id="rankComment" class="text-[11px] font-bold text-slate-600 mt-1">称号：新人ペーパー職人</p>
+  </div>
+
+  <div class="bg-amber-50/80 border-2 border-amber-200 rounded-2xl p-3 mb-3.5 text-left">
+   <div class="flex items-center justify-between mb-1.5">
+    <span class="text-xs font-extrabold text-amber-800">🏆 マイベスト TOP 5</span>
+    <button data-reset-trigger class="text-[10px] font-bold text-slate-500 bg-white border rounded-lg px-2 py-0.5">リセット</button>
+   </div>
+   <div id="gameOverRankingList" class="space-y-1 text-xs"></div>
+  </div>
+
+  <div class="flex flex-col gap-2">
+   <button id="retryBtn" class="w-full py-3 bg-emerald-500 text-white font-extrabold text-base rounded-2xl btn-pop-green">
+    🔄 もう一度挑戦する
+   </button>
+   <button id="shareBtn" class="w-full py-2 bg-sky-100 text-sky-700 font-extrabold text-xs rounded-2xl">
+    📋 結果をコピーしてシェア
+   </button>
+  </div>
+ </div>
+</div>
+
+<div id="resetConfirmModal" class="hidden absolute inset-0 bg-slate-900/60 flex items-center justify-center p-5 z-30">
+ <div class="bg-white rounded-3xl p-5 w-full max-w-xs shadow-2xl border-2 border-rose-200 text-center">
+  <div class="text-2xl mb-1">🗑️</div>
+  <h3 class="text-base font-extrabold text-slate-800 mb-1">ランキングをリセットしますか？</h3>
+  <p class="text-xs text-slate-500 font-bold mb-4">保存されているTOP 5の記録がすべて消去されます。</p>
+  <div class="flex gap-2.5">
+   <button id="cancelResetBtn" class="flex-1 py-2.5 bg-slate-100 text-slate-700 font-extrabold text-xs rounded-xl">キャンセル</button>
+   <button id="confirmResetBtn" class="flex-1 py-2.5 bg-rose-500 text-white font-extrabold text-xs rounded-xl">リセットする</button>
+  </div>
+ </div>
+</div>
+
+<div id="toastMsg" class="hidden absolute bottom-6 left-1/2 -translate-x-1/2 bg-slate-800/90 text-white text-xs font-bold px-4 py-2.5 rounded-full shadow-lg z-40 whitespace-nowrap">
+ コピーしました！
+</div>
+
+</div>
+
+<script>
+'use strict';
 class SoundFX {
  constructor(){
   this.ctx=null;
@@ -694,14 +748,14 @@ let spawnTimer=.65;
 let tearPoint=null;
 let entryId=null;
 
+// 2枚重ね（ダブル）管理
 let plyCount=2;
 let nearMissCooldown=0;
 
-const MILESTONES=[50,100,250,500,750,1000,1500,2000,2500,3000];
+// マイルストーン管理
+const MILESTONES=[50,100,250,500,750,1000,1500,2000];
 let reachedMilestones=new Set();
 let milestoneTimer=0;
-
-let bossDefeatedCount=0;
 
 let invincibleTime=0;
 let invincibleSparkleTimer=0;
@@ -725,7 +779,7 @@ let boss={
  dashTargetY:0,
  bladePhase:0,
  hitCooldown:0,
- shotTimer:1.5
+ shotTimer:0
 };
 
 const paper={
@@ -800,7 +854,63 @@ function setPly(newPly){
  }else{
   text.textContent='1枚重ね';
   badge.className='bg-slate-100/95 border-2 border-slate-300 rounded-2xl px-2.5 py-1.5 text-center shadow-sm';
-  text.className='text-
+  text.className='text-xs font-extrabold text-slate-600 mt-0.5';
+ }
+}
+
+function absorbHitWithPly(x,y){
+ if(plyCount>1){
+  setPly(1);
+  durability=Math.max(durability,45);
+  sound.playTear();
+  floatText(x,y-35,'🛡️ 2枚目が身代わり！（1枚重ね）','#4f46e5');
+  for(let i=0;i<14;i++){
+   const a=Math.PI*2*i/14;
+   particles.push({
+    x,y,
+    vx:Math.cos(a)*(70+Math.random()*90),
+    vy:Math.sin(a)*(70+Math.random()*90),
+    size:5+Math.random()*6,
+    rot:Math.random()*6.28,
+    vr:6,
+    life:.6+Math.random()*.4,
+    color:'#e0e7ff'
+   });
+  }
+  updateHUD();
+  return true;
+ }
+ return false;
+}
+
+function triggerMilestone(m){
+ reachedMilestones.add(m);
+ milestoneTimer=2.1;
+ sound.playMilestone();
+ $('milestoneText').textContent=`${m}m 突破！${m>=500?'すごい記録！':'ナイスラン！'}`;
+ const el=$('milestoneBanner');
+ el.classList.remove('hidden','milestone-anim');
+ void el.offsetWidth;
+ el.classList.add('milestone-anim');
+}
+
+function applyBackgroundTheme(){
+ const body=document.body;
+ body.classList.remove('bg-[#f0f9ff]','bg-amber-50','bg-slate-900','bg-fuchsia-50');
+ if(distance>=1000){
+  body.style.backgroundColor='#fdf2f8';
+  body.style.backgroundImage='linear-gradient(to right,rgba(244,114,182,.25) 1px,transparent 1px),linear-gradient(to bottom,rgba(168,85,247,.25) 1px,transparent 1px)';
+ }else if(distance>=500){
+  body.style.backgroundColor='#0f172a';
+  body.style.backgroundImage='linear-gradient(to right,rgba(56,189,248,.16) 1px,transparent 1px),linear-gradient(to bottom,rgba(56,189,248,.16) 1px,transparent 1px)';
+ }else if(distance>=200){
+  body.style.backgroundColor='#fff7ed';
+  body.style.backgroundImage='linear-gradient(to right,rgba(251,146,60,.28) 1px,transparent 1px),linear-gradient(to bottom,rgba(251,146,60,.28) 1px,transparent 1px)';
+ }else{
+  body.style.backgroundColor='#f0f9ff';
+  body.style.backgroundImage='linear-gradient(to right,rgba(186,230,253,.55) 1px,transparent 1px),linear-gradient(to bottom,rgba(186,230,253,.55) 1px,transparent 1px)';
+ }
+}
 function startGame(){
  sound.init();
  sound.stopBGM(true);
@@ -815,7 +925,6 @@ function startGame(){
  nearMissCooldown=0;
  reachedMilestones=new Set();
  milestoneTimer=0;
- bossDefeatedCount=0;
  applyBackgroundTheme();
  setPly(2);
 
@@ -880,8 +989,8 @@ function startBossBattle(){
  boss.y=H+120;
  boss.targetX=W/2;
  boss.baseY=H*.82;
- boss.hp=100+bossDefeatedCount*25;
- boss.maxHp=boss.hp;
+ boss.hp=100;
+ boss.maxHp=100;
  boss.state='ENTER';
  boss.stateTimer=2.0;
  boss.hitCooldown=0;
@@ -942,21 +1051,15 @@ function damageBoss(amount,hitX,hitY){
 function defeatBoss(){
  boss.active=false;
  boss.defeated=true;
- bossDefeatedCount++;
  $('bossHud').classList.add('hidden');
-
- applyBackgroundTheme();
 
  distance+=150;
  durability=100;
  setPly(2);
  sound.playFanfare(true);
 
- const colorNames=['水色','緑色','ピンク色'];
- const nextColorName=colorNames[bossDefeatedCount%colorNames.length];
-
  floatText(boss.x,boss.y-40,'🎉 巨大ハサミ大王 撃破！！','#facc15');
- floatText(paper.x,paper.y-40,`+150.0m ＆ ${nextColorName}タイルへ変化！`,'#10b981');
+ floatText(paper.x,paper.y-40,'+150.0m ＆ 2枚重ね＆全回復！','#10b981');
 
  for(let i=0;i<60;i++){
   const a=Math.PI*2*i/60;
@@ -1270,7 +1373,7 @@ function updateBoss(gameDt){
  if(!boss.active)return;
 
  boss.hitCooldown=Math.max(0,boss.hitCooldown-gameDt);
- boss.bladePhase+=(16+bossDefeatedCount*3)*gameDt;
+ boss.bladePhase+=16*gameDt;
 
  boss.hp=Math.max(0,boss.hp-3.8*gameDt);
  updateBossHUD();
@@ -1288,12 +1391,12 @@ function updateBoss(gameDt){
   }
  }
  else if(boss.state==='IDLE'){
-  boss.x+=(paper.x-boss.x)*Math.min(1,gameDt*(2.4+bossDefeatedCount*.4));
+  boss.x+=(paper.x-boss.x)*Math.min(1,gameDt*2.4);
   boss.y+=(boss.baseY-boss.y)*Math.min(1,gameDt*5);
 
   boss.shotTimer-=gameDt;
   if(boss.shotTimer<=0){
-   boss.shotTimer=Math.max(.85,1.55-bossDefeatedCount*.18);
+   boss.shotTimer=1.55;
    entities.push({
     type:'boss_wave',
     x:boss.x,
@@ -1430,9 +1533,9 @@ function update(dt){
    triggerMilestone(m);
   }
  }
+ applyBackgroundTheme();
 
- const nextBossDistance=(bossDefeatedCount+1)*1000;
- if(distance>=nextBossDistance&&!boss.active){
+ if(distance>=1000&&!boss.active&&!boss.defeated){
   startBossBattle();
  }
 
