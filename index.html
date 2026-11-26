@@ -127,7 +127,7 @@ html,body{margin:0;width:100%;height:100%;overflow:hidden;touch-action:none;font
 
   <div class="bg-slate-50 rounded-2xl p-3 text-left text-[11px] text-slate-600 space-y-1.5 mb-3.5 border border-slate-200">
    <div>👆 <strong>左右にスライド</strong>して紙を誘導</div>
-   <div>🧻 <strong>2枚重ねスタート</strong>：1回ヒットを肩代わり＆耐久軽減！</div>
+   <div>🧻 <strong>2枚重ねスタート</strong>：1回ヒットを肩代わり＆耐久軽減！（回復では戻らず、ミステリーボックスで復活）</div>
    <div>⚡ 障害物の<strong>ギリギリすり抜け</strong>でボーナス！</div>
    <div>🎊 距離の節目で<strong>マイルストーン＆背景変化</strong>！</div>
    <div>✂️🌀 <strong>1,000mごと</strong>に巨大ハサミ＆暴走メガ扇風機ボスが襲来！</div>
@@ -857,8 +857,7 @@ function absorbHitWithPly(x,y){
    const a=Math.PI*2*i/14;
    particles.push({
     x,y,
-    vx:Math.cos(a)*(70+Math.random()*90),
-    vy:Math.sin(a)*(70+Math.random()*90),
+    vx:Math.cos(a)*(70+Math.random()*90),vy:Math.sin(a)*(70+Math.random()*90),
     size:5+Math.random()*6,rot:Math.random()*6.28,vr:6,
     life:.6+Math.random()*.4,color:'#e0e7ff'
    });
@@ -995,10 +994,10 @@ function defeatBoss(){
  const defeatedName=boss.kind==='MEGA_FAN'?'暴走メガ扇風機大王':'巨大ハサミ大王';
  boss.active=false;boss.defeated=true;bossDefeatedCount++;
  $('bossHud').classList.add('hidden');
- distance+=150;durability=100;setPly(2);
+ distance+=150;durability=100;
  sound.playFanfare(true);
  floatText(boss.x,boss.y-40,`🎉 ${defeatedName} 撃破！！`,'#facc15');
- floatText(paper.x,paper.y-40,'+150.0m ＆ 2枚重ね＆全回復！','#10b981');
+ floatText(paper.x,paper.y-40,'+150.0m ＆ 全回復！','#10b981');
  for(let i=0;i<60;i++){
   const a=Math.PI*2*i/60;
   particles.push({
@@ -1153,11 +1152,29 @@ function activateInvincible(){
 
 function activateMystery(){
  sound.playMystery();
- const effects=['slow','magnet','revive'];
+ const effects=['slow','magnet','revive','double_ply'];
  const selected=effects[Math.floor(Math.random()*effects.length)];
- if(selected==='slow'){slowTime=5;floatText(paper.x,paper.y-55,'⏳ 時間スロー！！','#2563eb');}
- else if(selected==='magnet'){magnetTime=8;floatText(paper.x,paper.y-55,'🧲 アイテム磁石！！','#0d9488');}
- else if(selected==='revive'){reviveAvailable=true;floatText(paper.x,paper.y-55,'❤️ 一回復活をゲット！！','#e11d48');}
+
+ if(selected==='slow'){
+  slowTime=5;
+  floatText(paper.x,paper.y-55,'⏳ 時間スロー！！','#2563eb');
+ }else if(selected==='magnet'){
+  magnetTime=8;
+  floatText(paper.x,paper.y-55,'🧲 アイテム磁石！！','#0d9488');
+ }else if(selected==='revive'){
+  reviveAvailable=true;
+  floatText(paper.x,paper.y-55,'❤️ 一回復活をゲット！！','#e11d48');
+ }else if(selected==='double_ply'){
+  if(plyCount<2){
+   setPly(2);
+   durability=Math.min(100,durability+25);
+   floatText(paper.x,paper.y-55,'🧻 2枚重ね復活！！','#4f46e5');
+  }else{
+   durability=Math.min(100,durability+30);
+   distance+=3;
+   floatText(paper.x,paper.y-55,'🧻 すでに2枚重ね！+3.0m＆耐久+30%','#4f46e5');
+  }
+ }
 
  for(let i=0;i<42;i++){
   const a=Math.PI*2*i/42;
@@ -1427,9 +1444,8 @@ function update(dt){
   if(hit){
    if(e.type==='repair'){
     durability=Math.min(100,durability+35);
-    if(plyCount<2)setPly(2);
     sound.playItem(false);
-    floatText(e.x,e.y-10,'耐久 +35% ＆ 2枚重ね！','#10b981');
+    floatText(e.x,e.y-10,'耐久 +35%！','#10b981');
     entities.splice(i,1);continue;
    }
    if(e.type==='gold'){
