@@ -223,7 +223,7 @@
       const endLen = document.getElementById("endLen");
       const endBest = document.getElementById("endBest");
 
-      const BEST_KEY = "tp_longrun_cat_water_star_v1";
+      const BEST_KEY = "tp_longrun_downward_v2";
       let bestMeters = parseFloat(localStorage.getItem(BEST_KEY) || "0") || 0;
       bestText.textContent = bestMeters.toFixed(1) + "m";
 
@@ -248,6 +248,7 @@
       let durability = 100;
       let starTime = 0;
       let rainbowHue = 0;
+      let scrollPx = 0; // 下方向へ進む累積ピクセル量
 
       const holderY = 128;
       const paperWidth = 74;
@@ -256,10 +257,12 @@
       let prevTipX = w * 0.5;
       const tipY = () => Math.min(h * 0.78, h - 96);
 
-      // 障害物・スター・吹き飛びエフェクト
+      // 最初は猫の手 → 水 → 無敵スター の順で必ず出してからランダム出現にする
+      const initialQueue = ["cat", "water", "star"];
+      let queueIndex = 0;
       let objects = [];
       let blasts = [];
-      let spawnTimer = 0.8;
+      let spawnTimer = 0.25;
       let lastTime = performance.now();
 
       function updateHud() {
@@ -289,12 +292,14 @@
         meters = 0;
         durability = 100;
         starTime = 0;
+        scrollPx = 0;
         tipX = w * 0.5;
         targetX = w * 0.5;
         prevTipX = w * 0.5;
+        queueIndex = 0;
         objects = [];
         blasts = [];
-        spawnTimer = 0.7;
+        spawnTimer = 0.25;
         updateHud();
       }
 
@@ -350,32 +355,36 @@
         if (e.key === "ArrowRight" || e.key === "d" || e.key === "D") keys.right = false;
       });
 
-      function spawnObject() {
-        const margin = 42;
-        const x = margin + Math.random() * Math.max(40, w - margin * 2);
-        const r = Math.random();
-        if (r < 0.16) {
-          objects.push({ kind: "star", x, y: holderY + 16, vx: 0, radius: 18 });
-        } else if (r < 0.58) {
-          // 猫の手（左右にゆらゆら動く）
-          const dir = Math.random() < 0.5 ? -1 : 1;
-          objects.push({
-            kind: "cat",
-            x,
-            y: holderY + 16,
-            vx: dir * (55 + Math.random() * 45),
-            radius: 20
-          });
-        } else {
-          // 水の障害物
-          objects.push({
-            kind: "water",
-            x,
-            y: holderY + 16,
-            vx: 0,
-            radius: 20
-          });
+      function pickKind() {
+        if (queueIndex < initialQueue.length) {
+          return initialQueue[queueIndex++];
         }
+        const r = Math.random();
+        if (r < 0.2) return "star";
+        if (r < 0.6) return "cat";
+        return "water";
+      }
+
+      function spawnObject() {
+        const kind = pickKind();
+        const margin = 48;
+        // 最初は紙の進路（tipX付近）にも出やすいように配置してすぐ見えるようにする
+        let x;
+        if (queueIndex <= initialQueue.length) {
+          const offset = (queueIndex - 2) * 55;
+          x = Math.max(margin, Math.min(w - margin, tipX + offset));
+        } else {
+          x = margin + Math.random() * Math.max(40, w - margin * 2);
+        }
+
+        const dir = Math.random() < 0.5 ? -1 : 1;
+        objects.push({
+          kind,
+          x,
+          y: holderY + 18,
+          vx: kind === "cat" ? dir * 65 : 0,
+          radius: 20
+        });
       }
 
       function spawnBlast(x, y, emoji) {
@@ -397,8 +406,9 @@
         ctx.fillStyle = "#f8fafc";
         ctx.fillRect(0, 0, w, h);
 
+        // 背景グリッドも下方向へスクロールさせる
         const grid = 26;
-        const offset = (meters * 55) % grid;
+        const offset = scrollPx % grid;
         ctx.strokeStyle = "#e2e8f0";
         ctx.lineWidth = 1;
         for (let x = 0; x <= w; x += grid) {
@@ -455,12 +465,13 @@
         ctx.lineWidth = 2;
         ctx.stroke();
 
+        // ミシン目も下方向へ流れていく
         ctx.save();
         ctx.setLineDash([5, 5]);
         ctx.strokeStyle = "#cbd5e1";
         ctx.lineWidth = 1.5;
         const perfGap = 44;
-        const perfShift = (meters * 55) % perfGap;
+        const perfShift = scrollPx % perfGap;
         for (let y = startY + perfShift; y < endY; y += perfGap) {
           const t = (y - startY) / Math.max(1, endY - startY);
           const ease = t * t * (3 - 2 * t);
@@ -472,12 +483,14 @@
         }
         ctx.restore();
 
+        // 上部のロール本体（ホルダー）
         ctx.fillStyle = "#e2e8f0";
         ctx.fillRect(originX - halfW - 6, startY - 14, paperWidth + 12, 16);
         ctx.strokeStyle = "#64748b";
         ctx.lineWidth = 2;
         ctx.strokeRect(originX - halfW - 6, startY - 14, paperWidth + 12, 16);
 
+        // 下端の紙の先端ライン
         ctx.beginPath();
         ctx.moveTo(tipX - halfW, endY);
         ctx.lineTo(tipX + halfW, endY);
@@ -489,7 +502,7 @@
       function drawObjectsAndBlasts() {
         for (const obj of objects) {
           ctx.save();
-          ctx.font = "28px sans-serif";
+          ctx.font = "30px sans-serif";
           ctx.textAlign = "center";
           ctx.textBaseline = "middle";
           const icon = obj.kind === "cat" ? "🐾" : obj.kind === "water" ? "💧" : "⭐";
@@ -502,7 +515,7 @@
           ctx.globalAlpha = Math.max(0, b.life / 0.75);
           ctx.translate(b.x, b.y);
           ctx.rotate(b.rot);
-          ctx.font = "28px sans-serif";
+          ctx.font = "30px sans-serif";
           ctx.textAlign = "center";
           ctx.textBaseline = "middle";
           ctx.fillText(b.emoji, 0, 0);
@@ -526,11 +539,15 @@
           tipX += (targetX - tipX) * Math.min(1, dt * 15);
 
           const lateralSpeed = Math.abs(tipX - prevTipX) / Math.max(dt, 0.001);
-          const fallSpeed = Math.min(360, 165 + meters * 1.8);
+          const fallSpeed = Math.min(340, 165 + meters * 1.6);
+          const moveY = (starTime > 0 ? fallSpeed * 1.2 : fallSpeed) * dt;
+
+          // 下方向（+moveY）へ進める
+          scrollPx += moveY;
+          meters += moveY / 60;
 
           if (starTime > 0) {
             starTime = Math.max(0, starTime - dt);
-            meters += ((fallSpeed * 1.2) * dt) / 60;
           } else {
             const safeSpeed = 350;
             if (lateralSpeed > safeSpeed) {
@@ -538,11 +555,91 @@
             } else {
               durability = Math.min(100, durability + 2.5 * dt);
             }
-            meters += (fallSpeed * dt) / 60;
           }
 
           spawnTimer -= dt;
           if (spawnTimer <= 0) {
             spawnObject();
-            spawnTimer = Math.max(0.55, 1.15 - meters * 0.006);
-          
+            spawnTimer = Math.max(0.65, 1.15 - meters * 0.005);
+          }
+
+          const endY = tipY();
+          const halfW = paperWidth * 0.5;
+          const nextObjects = [];
+
+          for (const obj of objects) {
+            obj.y += fallSpeed * dt; // 確実に下方向（+y）へ移動
+            obj.x += obj.vx * dt;
+            if (obj.x < 30) {
+              obj.x = 30;
+              obj.vx = Math.abs(obj.vx);
+            } else if (obj.x > w - 30) {
+              obj.x = w - 30;
+              obj.vx = -Math.abs(obj.vx);
+            }
+
+            const hitX = Math.abs(obj.x - tipX) < halfW + obj.radius * 0.85;
+            const hitY = Math.abs(obj.y - endY) < obj.radius + 14;
+
+            if (hitX && hitY) {
+              if (obj.kind === "star") {
+                starTime = 5.0;
+                durability = Math.min(100, durability + 20);
+                meters += 1.0;
+                continue;
+              } else if (obj.kind === "cat") {
+                if (starTime > 0) {
+                  spawnBlast(obj.x, obj.y, "🐾");
+                  meters += 0.5;
+                  continue;
+                } else {
+                  durability -= 35;
+                  continue;
+                }
+              } else if (obj.kind === "water") {
+                if (starTime > 0) {
+                  spawnBlast(obj.x, obj.y, "💧");
+                  meters += 0.5;
+                  continue;
+                } else {
+                  durability -= 28;
+                  continue;
+                }
+              }
+            }
+
+            if (obj.y < h + 45) {
+              nextObjects.push(obj);
+            }
+          }
+          objects = nextObjects;
+
+          const nextBlasts = [];
+          for (const b of blasts) {
+            b.x += b.vx * dt;
+            b.y += b.vy * dt;
+            b.vy += 650 * dt;
+            b.rot += b.vRot * dt;
+            b.life -= dt;
+            if (b.life > 0) nextBlasts.push(b);
+          }
+          blasts = nextBlasts;
+
+          updateHud();
+
+          if (starTime <= 0 && durability <= 0) {
+            endGame("紙がちぎれた！");
+          }
+        }
+
+        drawBackground();
+        drawPaper();
+        drawObjectsAndBlasts();
+        requestAnimationFrame(loop);
+      }
+
+      requestAnimationFrame(loop);
+    })();
+  </script>
+</body>
+</html>
