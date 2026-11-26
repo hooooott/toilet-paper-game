@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="ja">
 <head>
@@ -39,7 +40,6 @@ html,body{margin:0;width:100%;height:100%;overflow:hidden;touch-action:none;font
 
 <canvas id="gameCanvas"></canvas>
 
-<!-- ゲーム中の表示 -->
 <div id="hud" class="hidden absolute top-0 left-0 w-full p-3 pointer-events-none flex flex-col gap-2 z-10">
 
  <div class="flex items-start justify-between">
@@ -81,7 +81,6 @@ html,body{margin:0;width:100%;height:100%;overflow:hidden;touch-action:none;font
   </div>
  </div>
 
- <!-- 無敵時間表示 -->
  <div id="invincibleBadge" class="hidden self-center bg-gradient-to-r from-pink-500 via-purple-500 to-sky-500 text-white border-2 border-white rounded-full px-5 py-1.5 shadow-lg font-black text-sm">
   🌈 無敵モード！ <span id="invincibleTimeDisplay">7.0</span>秒
  </div>
@@ -113,6 +112,8 @@ html,body{margin:0;width:100%;height:100%;overflow:hidden;touch-action:none;font
    <div>⚠️ <strong>水たまり・ハサミ・猫の手・扇風機</strong>をよけよう！</div>
    <div>💚 回復ロールで耐久度を回復！</div>
    <div>🌟 <strong>無敵スター</strong>を取ると7秒間無敵！</div>
+   <div>🎁 <strong>ミステリーボックス</strong>から特別な能力をゲット！</div>
+   <div>⏳時間スロー・🧲磁石・❤️復活・👥分身が登場！</div>
    <div>🎵 明るく弾むポップBGM付き！</div>
   </div>
 
@@ -394,7 +395,6 @@ class SoundFX {
   });
  }
 
- // 無敵スター取得専用の音
  playStar(){
   if(this.muted||!this.ctx)return;
 
@@ -416,6 +416,25 @@ class SoundFX {
    g.connect(this.ctx.destination);
    o.start(t);
    o.stop(t+.34);
+  });
+ }
+
+ playMystery(){
+  if(this.muted||!this.ctx)return;
+  const now=this.ctx.currentTime;
+  [392,523.25,659.25,783.99,1046.5].forEach((f,i)=>{
+   const t=now+i*.065;
+   const o=this.ctx.createOscillator();
+   const g=this.ctx.createGain();
+   o.type='sine';
+   o.frequency.setValueAtTime(f,t);
+   g.gain.setValueAtTime(.001,t);
+   g.gain.linearRampToValueAtTime(.13,t+.025);
+   g.gain.exponentialRampToValueAtTime(.001,t+.3);
+   o.connect(g);
+   g.connect(this.ctx.destination);
+   o.start(t);
+   o.stop(t+.32);
   });
  }
 
@@ -662,10 +681,17 @@ let spawnTimer=.65;
 let tearPoint=null;
 let entryId=null;
 
-// 無敵状態
+// 既存の無敵状態
 let invincibleTime=0;
 let invincibleSparkleTimer=0;
 let rainbowHue=0;
+
+// ミステリーボックスの効果
+let slowTime=0;
+let magnetTime=0;
+let cloneTime=0;
+let reviveAvailable=false;
+let cloneFlash=0;
 
 const paper={
  x:0,
@@ -747,6 +773,12 @@ function startGame(){
  invincibleSparkleTimer=0;
  rainbowHue=0;
 
+ slowTime=0;
+ magnetTime=0;
+ cloneTime=0;
+ reviveAvailable=false;
+ cloneFlash=0;
+
  entities=[];
  particles=[];
  floating=[];
@@ -789,10 +821,45 @@ function rankTitle(m){
 
 
 // ============================================================
+// 復活処理
+// ============================================================
+function tryRevive(x=paper.x,y=paper.y){
+ if(!reviveAvailable)return false;
+
+ reviveAvailable=false;
+ durability=50;
+ cloneFlash=.8;
+
+ sound.playStar();
+ floatText(x,y-55,'❤️ 復活！！','#f43f5e');
+
+ for(let i=0;i<36;i++){
+  const a=Math.PI*2*i/36;
+  particles.push({
+   x,y,
+   vx:Math.cos(a)*(90+Math.random()*100),
+   vy:Math.sin(a)*(90+Math.random()*100),
+   size:4+Math.random()*6,
+   rot:Math.random()*6.28,
+   vr:5,
+   life:.7+Math.random()*.5,
+   color=['#fb7185','#fda4af','#facc15','#ffffff'][i%4]
+  });
+ }
+
+ updateHUD();
+ return true;
+}
+
+
+// ============================================================
 // ゲームオーバー
 // ============================================================
 function gameOver(reason,x=paper.x,y=paper.y){
  if(state!=='PLAYING')return;
+
+ // 復活権があればゲームオーバーを一度だけ回避
+ if(tryRevive(x,y))return;
 
  state='GAMEOVER';
 
@@ -800,6 +867,9 @@ function gameOver(reason,x=paper.x,y=paper.y){
  sound.playTear();
 
  invincibleTime=0;
+ slowTime=0;
+ magnetTime=0;
+ cloneTime=0;
  $('invincibleBadge').classList.add('hidden');
 
  tearPoint={x,y};
@@ -847,7 +917,7 @@ function gameOver(reason,x=paper.x,y=paper.y){
  touchHint.classList.add('hidden');
 
  setTimeout(()=>{
-  gameOverScreen.classList.remove('hidden');
+  if(state==='GAMEOVER')gameOverScreen.classList.remove('hidden');
  },520);
 }
 
@@ -917,11 +987,19 @@ function spawnEntity(){
    bob:0
   });
  }
- else{
-  // 約3%の確率で無敵スターが出現
+ else if(r<.985){
   entities.push({
    type:'star',x,y,
    radius:24,
+   bob:Math.random()*6.28,
+   rotation:0
+  });
+ }
+ else{
+  // ミステリーボックス：約1.5%で出現
+  entities.push({
+   type:'mystery',x,y,
+   radius:25,
    bob:Math.random()*6.28,
    rotation:0
   });
@@ -967,7 +1045,6 @@ function activateInvincible(){
 
  floatText(paper.x,paper.y-45,'🌈 7秒間 無敵！！','#e879f9');
 
- // 取得時の大きなキラキラ
  for(let i=0;i<32;i++){
   const a=Math.PI*2*i/32;
   const c=`hsl(${i*11},100%,65%)`;
@@ -987,6 +1064,57 @@ function activateInvincible(){
 
  $('invincibleBadge').classList.remove('hidden');
  $('invincibleTimeDisplay').textContent='7.0';
+}
+
+
+// ============================================================
+// ミステリーボックスの効果
+// ============================================================
+function activateMystery(){
+ sound.playMystery();
+
+ const effects=[
+  {name:'slow',weight:1},
+  {name:'magnet',weight:1},
+  {name:'revive',weight:1},
+  {name:'clone',weight:1}
+ ];
+
+ const selected=effects[Math.floor(Math.random()*effects.length)];
+
+ if(selected.name==='slow'){
+  slowTime=5;
+  floatText(paper.x,paper.y-55,'⏳ 時間スロー！！','#2563eb');
+ }
+ else if(selected.name==='magnet'){
+  magnetTime=8;
+  floatText(paper.x,paper.y-55,'🧲 アイテム磁石！！','#0d9488');
+ }
+ else if(selected.name==='revive'){
+  reviveAvailable=true;
+  floatText(paper.x,paper.y-55,'❤️ 一回復活をゲット！！','#e11d48');
+ }
+ else if(selected.name==='clone'){
+  cloneTime=5;
+  floatText(paper.x,paper.y-55,'👥 分身の術！！','#9333ea');
+ }
+
+ for(let i=0;i<42;i++){
+  const a=Math.PI*2*i/42;
+  const colors=['#a855f7','#facc15','#38bdf8','#fb7185','#ffffff'];
+
+  particles.push({
+   x:paper.x,
+   y:paper.y,
+   vx:Math.cos(a)*(80+Math.random()*150),
+   vy:Math.sin(a)*(80+Math.random()*150),
+   size:4+Math.random()*7,
+   rot:Math.random()*6.28,
+   vr:5,
+   life:.7+Math.random()*.7,
+   color:colors[i%colors.length]
+  });
+ }
 }
 
 
@@ -1021,6 +1149,15 @@ function update(dt){
   return;
  }
 
+ // ミステリー効果のタイマー
+ slowTime=Math.max(0,slowTime-dt);
+ magnetTime=Math.max(0,magnetTime-dt);
+ cloneTime=Math.max(0,cloneTime-dt);
+ cloneFlash=Math.max(0,cloneFlash-dt);
+
+ // 時間スロー中はゲーム内の時間をゆっくり進める
+ const gameDt=dt*(slowTime>0?.5:1);
+
  // 無敵タイマー
  if(invincibleTime>0){
   invincibleTime=Math.max(0,invincibleTime-dt);
@@ -1050,9 +1187,9 @@ function update(dt){
   }
  }
 
- distance+=(speed/42)*dt;
+ distance+=(speed/42)*gameDt;
  speed=Math.min(540,230+distance*2.1);
- rollAngle+=(speed/28)*dt;
+ rollAngle+=(speed/28)*gameDt;
 
  rollRadius=Math.max(18,38-distance*.08);
 
@@ -1061,30 +1198,29 @@ function update(dt){
  // キーボード操作
  const keySpeed=420;
 
- if(input.left)paper.targetX-=keySpeed*dt;
- if(input.right)paper.targetX+=keySpeed*dt;
+ if(input.left)paper.targetX-=keySpeed*gameDt;
+ if(input.right)paper.targetX+=keySpeed*gameDt;
 
  paper.targetX=Math.max(26,Math.min(W-26,paper.targetX));
 
  const oldX=paper.x;
- const lerp=1-Math.exp(-16*dt);
+ const lerp=1-Math.exp(-16*gameDt);
 
  paper.x+=(paper.targetX-paper.x)*lerp;
- paper.vx=(paper.x-oldX)/Math.max(dt,.001);
+ paper.vx=(paper.x-oldX)/Math.max(gameDt,.001);
 
  const absV=Math.abs(paper.vx);
  const stretch=Math.abs(paper.x-W/2)/(W*.5);
 
- // 無敵中は耐久度を減らさない
  if(invincibleTime<=0){
   if(absV>335){
    const excess=(absV-335)/460;
-   durability-=(30+excess*68)*dt;
+   durability-=(30+excess*68)*gameDt;
   }else{
-   durability=Math.min(100,durability+(stretch>.75?5:11)*dt);
+   durability=Math.min(100,durability+(stretch>.75?5:11)*gameDt);
   }
  }else{
-  durability=Math.min(100,durability+7*dt);
+  durability=Math.min(100,durability+7*gameDt);
  }
 
  if(durability<30&&performance.now()-lastWarning>450&&invincibleTime<=0){
@@ -1094,9 +1230,14 @@ function update(dt){
 
  if(durability<=0){
   durability=0;
-  updateHUD();
-  gameOver('ビリッ！急操作で紙がちぎれた！',paper.x,paper.y-30);
-  return;
+
+  if(tryRevive(paper.x,paper.y)){
+   durability=50;
+  }else{
+   updateHUD();
+   gameOver('ビリッ！急操作で紙がちぎれた！',paper.x,paper.y-30);
+   return;
+  }
  }
 
  // 紙の軌跡
@@ -1111,11 +1252,11 @@ function update(dt){
   const dx=W/2+(paper.x-W/2)*e+wave;
 
   paper.trail[i].y=ty;
-  paper.trail[i].x+=(dx-paper.trail[i].x)*Math.min(1,dt*(12+t*14));
+  paper.trail[i].x+=(dx-paper.trail[i].x)*Math.min(1,gameDt*(12+t*14));
  }
 
  // 障害物・アイテム出現
- spawnTimer-=dt;
+ spawnTimer-=gameDt;
 
  if(spawnTimer<=0){
   spawnEntity();
@@ -1126,34 +1267,54 @@ function update(dt){
  for(let i=entities.length-1;i>=0;i--){
   const e=entities[i];
 
-  e.y-=speed*dt;
+  e.y-=speed*gameDt;
 
   if(e.type==='puddle'){
-   e.wobble+=4*dt;
+   e.wobble+=4*gameDt;
   }
   else if(e.type==='scissors'){
-   e.phase+=12*dt;
-   e.x+=e.vx*dt;
+   e.phase+=12*gameDt;
+   e.x+=e.vx*gameDt;
 
    if(e.x<35||e.x>W-35)e.vx*=-1;
   }
   else if(e.type==='catpaw'){
-   e.phase+=4.5*dt;
+   e.phase+=4.5*gameDt;
    const ex=(Math.sin(e.phase)*.5+.5)*e.reach;
    e.x=e.left?-15+ex:W+15-ex;
   }
   else if(e.type==='fan'){
-   e.angle+=18*dt;
+   e.angle+=18*gameDt;
 
-   // 無敵中は扇風機の風を受けない
    if(invincibleTime<=0&&Math.abs(e.y-paper.y)<48){
-    paper.targetX+=(e.right?185:-185)*dt;
-    durability-=14*dt;
+    paper.targetX+=(e.right?185:-185)*gameDt;
+    durability-=14*gameDt;
    }
   }
-  else if(e.type==='repair'||e.type==='gold'||e.type==='star'){
-   e.bob+=5*dt;
-   if(e.type==='star')e.rotation+=2.5*dt;
+  else if(
+   e.type==='repair'||
+   e.type==='gold'||
+   e.type==='star'||
+   e.type==='mystery'
+  ){
+   e.bob+=5*gameDt;
+   if(e.type==='star'||e.type==='mystery')e.rotation+=2.5*gameDt;
+  }
+
+  // アイテム磁石：近くのアイテムをプレイヤーに引き寄せる
+  if(
+   magnetTime>0&&
+   ['repair','gold','star','mystery'].includes(e.type)
+  ){
+   const dx=paper.x-e.x;
+   const dy=paper.y-e.y;
+   const dist=Math.hypot(dx,dy);
+
+   if(dist<210){
+    const pull=(1-dist/260)*7;
+    e.x+=dx*pull*gameDt;
+    e.y+=dy*pull*gameDt;
+   }
   }
 
   const pts=[
@@ -1167,7 +1328,6 @@ function update(dt){
 
   if(hit){
 
-   // 回復アイテム
    if(e.type==='repair'){
     durability=Math.min(100,durability+35);
     sound.playItem(false);
@@ -1176,7 +1336,6 @@ function update(dt){
     continue;
    }
 
-   // 黄金ロール
    if(e.type==='gold'){
     distance+=5;
     durability=Math.min(100,durability+20);
@@ -1186,14 +1345,37 @@ function update(dt){
     continue;
    }
 
-   // 無敵スター
    if(e.type==='star'){
     activateInvincible();
     entities.splice(i,1);
     continue;
    }
 
-   // 無敵中は障害物を突破！
+   // ミステリーボックスを開封
+   if(e.type==='mystery'){
+    activateMystery();
+    entities.splice(i,1);
+    continue;
+   }
+
+   // 分身が障害物を肩代わり
+   if(cloneTime>0&&invincibleTime<=0){
+    cloneTime=0;
+    cloneFlash=.65;
+    floatText(e.x,e.y-15,'分身が守ってくれた！','#9333ea');
+
+    for(let k=0;k<18;k++){
+     createSparkle(
+      e.x+(Math.random()-.5)*45,
+      e.y+(Math.random()-.5)*45,
+      ['#c084fc','#e9d5ff','#ffffff'][k%3]
+     );
+    }
+
+    entities.splice(i,1);
+    continue;
+   }
+
    if(invincibleTime>0){
     if(e.type==='puddle'){
      floatText(e.x,e.y,'水たまり突破！','#38bdf8');
@@ -1203,7 +1385,6 @@ function update(dt){
      floatText(e.x,e.y,'猫の手突破！','#fb923c');
     }
 
-    // 突破時のキラキラ
     for(let k=0;k<7;k++){
      createSparkle(
       e.x+(Math.random()-.5)*30,
@@ -1216,7 +1397,6 @@ function update(dt){
     continue;
    }
 
-   // 通常時の障害物
    if(e.type==='puddle'){
     gameOver('ビチャッ！水たまりでふやけた！',e.x,e.y);
     return;
@@ -1292,9 +1472,13 @@ function draw(){
   drawTorn();
  }
 
- // 無敵中の虹色オーラ
  if(state==='PLAYING'&&invincibleTime>0){
   drawInvincibleAura();
+ }
+
+ // 分身の描画
+ if(state==='PLAYING'&&cloneTime>0){
+  drawClone();
  }
 
  drawRoll();
@@ -1326,6 +1510,62 @@ function draw(){
 
 
 // ============================================================
+// 分身の描画
+// ============================================================
+function drawClone(){
+ const t=performance.now()/1000;
+ const offset=Math.sin(t*5)*5;
+ const x=paper.x+55;
+ const y=paper.y+offset;
+
+ ctx.save();
+ ctx.globalAlpha=.58;
+ ctx.translate(x,y);
+
+ ctx.shadowBlur=18;
+ ctx.shadowColor='#a855f7';
+
+ ctx.fillStyle='#e9d5ff';
+ ctx.strokeStyle='#9333ea';
+ ctx.lineWidth=3;
+
+ ctx.beginPath();
+ ctx.ellipse(0,0,19,25,0,0,Math.PI*2);
+ ctx.fill();
+ ctx.stroke();
+
+ ctx.fillStyle='white';
+ ctx.beginPath();
+ ctx.ellipse(0,-2,11,15,0,0,Math.PI*2);
+ ctx.fill();
+
+ ctx.fillStyle='#7e22ce';
+ ctx.beginPath();
+ ctx.arc(-5,-5,2.2,0,Math.PI*2);
+ ctx.arc(5,-5,2.2,0,Math.PI*2);
+ ctx.fill();
+
+ ctx.strokeStyle='#9333ea';
+ ctx.lineWidth=2;
+ ctx.beginPath();
+ ctx.arc(0,3,5,.15,Math.PI-.15);
+ ctx.stroke();
+
+ ctx.restore();
+
+ ctx.save();
+ ctx.font='900 11px sans-serif';
+ ctx.textAlign='center';
+ ctx.fillStyle='#7e22ce';
+ ctx.strokeStyle='white';
+ ctx.lineWidth=3;
+ ctx.strokeText('分身',x,y-34);
+ ctx.fillText('分身',x,y-34);
+ ctx.restore();
+}
+
+
+// ============================================================
 // 無敵中の虹色オーラ
 // ============================================================
 function drawInvincibleAura(){
@@ -1335,7 +1575,6 @@ function drawInvincibleAura(){
 
  ctx.save();
 
- // 外側の虹色リング
  const grad=ctx.createConicGradient(t*2,paper.x,paper.y);
 
  grad.addColorStop(0,'#ff4545');
@@ -1355,7 +1594,6 @@ function drawInvincibleAura(){
  ctx.arc(paper.x,paper.y,radius,0,Math.PI*2);
  ctx.stroke();
 
- // 内側の光
  ctx.globalAlpha=.18;
  ctx.fillStyle=grad;
  ctx.beginPath();
@@ -1364,7 +1602,6 @@ function drawInvincibleAura(){
 
  ctx.globalAlpha=1;
 
- // 回転する小さな星
  for(let i=0;i<8;i++){
   const a=t*2.8+i*Math.PI/4;
   const r=radius+10;
@@ -1783,14 +2020,12 @@ function drawEntity(e){
   ctx.fillText(gold?'+5m':'回復',0,16);
  }
 
- // 無敵スター
  else if(e.type==='star'){
   const pulse=1+Math.sin(e.bob*2)*.12;
 
   ctx.scale(pulse,pulse);
   ctx.rotate(e.rotation);
 
-  // 外側の光
   ctx.shadowBlur=22;
   ctx.shadowColor='#facc15';
 
@@ -1804,10 +2039,8 @@ function drawEntity(e){
   ctx.arc(0,0,35,0,Math.PI*2);
   ctx.fill();
 
-  // 星本体
   drawStarShape(0,0,12,24,5,'#facc15');
 
-  // キラキラ
   ctx.shadowBlur=0;
   ctx.fillStyle='white';
 
@@ -1825,6 +2058,79 @@ function drawEntity(e){
   ctx.lineWidth=3;
   ctx.strokeText('無敵',0,39);
   ctx.fillText('無敵',0,39);
+ }
+
+ // ミステリーボックス
+ else if(e.type==='mystery'){
+  const pulse=1+Math.sin(e.bob*2)*.09;
+
+  ctx.scale(pulse,pulse);
+  ctx.rotate(Math.sin(e.rotation)*.08);
+
+  ctx.shadowBlur=24;
+  ctx.shadowColor='#a855f7';
+
+  // 光の輪
+  const glow=ctx.createRadialGradient(0,0,4,0,0,39);
+  glow.addColorStop(0,'rgba(250,204,21,.5)');
+  glow.addColorStop(1,'rgba(168,85,247,0)');
+
+  ctx.fillStyle=glow;
+  ctx.beginPath();
+  ctx.arc(0,0,39,0,Math.PI*2);
+  ctx.fill();
+
+  // 箱本体
+  const boxGrad=ctx.createLinearGradient(-22,-20,22,22);
+  boxGrad.addColorStop(0,'#d8b4fe');
+  boxGrad.addColorStop(.5,'#9333ea');
+  boxGrad.addColorStop(1,'#581c87');
+
+  ctx.fillStyle=boxGrad;
+  ctx.strokeStyle='#facc15';
+  ctx.lineWidth=3;
+
+  ctx.beginPath();
+  ctx.roundRect(-22,-20,44,40,8);
+  ctx.fill();
+  ctx.stroke();
+
+  // フタ
+  ctx.fillStyle='#c084fc';
+  ctx.strokeStyle='#fef08a';
+  ctx.lineWidth=2;
+
+  ctx.beginPath();
+  ctx.roundRect(-24,-23,48,11,5);
+  ctx.fill();
+  ctx.stroke();
+
+  // ?
+  ctx.shadowBlur=0;
+  ctx.font='900 27px sans-serif';
+  ctx.textAlign='center';
+  ctx.textBaseline='middle';
+  ctx.lineWidth=4;
+  ctx.strokeStyle='#581c87';
+  ctx.strokeText('?',0,1);
+  ctx.fillStyle='#fff7ae';
+  ctx.fillText('?',0,1);
+
+  // 星の装飾
+  ctx.fillStyle='white';
+  [[-29,-27],[29,-22],[27,24],[-28,25]].forEach(([x,y])=>{
+   ctx.beginPath();
+   ctx.arc(x,y,2.5,0,Math.PI*2);
+   ctx.fill();
+  });
+
+  ctx.textBaseline='alphabetic';
+  ctx.font='900 10px sans-serif';
+  ctx.fillStyle='#7e22ce';
+  ctx.strokeStyle='white';
+  ctx.lineWidth=3;
+  ctx.strokeText('MYSTERY',0,36);
+  ctx.fillText('MYSTERY',0,36);
  }
 
  ctx.restore();
