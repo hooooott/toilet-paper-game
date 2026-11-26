@@ -129,7 +129,7 @@ html,body{margin:0;width:100%;height:100%;overflow:hidden;touch-action:none;font
    <div>👆 <strong>左右にスライド</strong>して紙を誘導</div>
    <div>🧻 <strong>2枚重ねスタート</strong>：1回ヒットを肩代わり＆耐久軽減！（回復では戻らず、ミステリーボックスで復活）</div>
    <div>⚡ 障害物の<strong>ギリギリすり抜け</strong>でボーナス！</div>
-   <div>🎊 距離の節目で<strong>マイルストーン＆背景変化</strong>！</div>
+   <div>🏠 <strong>ボス撃破ごとにタイル変化</strong>（普通タイル→芝生→土→カーペット）！</div>
    <div>✂️🌀 <strong>1,000mごと</strong>に巨大ハサミ＆暴走メガ扇風機ボスが襲来！</div>
   </div>
 
@@ -879,24 +879,35 @@ function triggerMilestone(m){
  el.classList.add('milestone-anim');
 }
 
+function tileStageName(count=bossDefeatedCount){
+ const s=count%4;
+ if(s===0)return'普通のタイル';
+ if(s===1)return'緑の芝生';
+ if(s===2)return'土の地面';
+ return'家のカーペット';
+}
+
 function applyBackgroundTheme(){
  const body=document.body;
- body.classList.remove('bg-[#f0f9ff]','bg-amber-50','bg-slate-900','bg-fuchsia-50');
- if(distance>=2000){
-  body.style.backgroundColor='#eff6ff';
-  body.style.backgroundImage='linear-gradient(to right,rgba(56,189,248,.28) 1px,transparent 1px),linear-gradient(to bottom,rgba(2,132,199,.24) 1px,transparent 1px)';
- }else if(distance>=1000){
-  body.style.backgroundColor='#fdf2f8';
-  body.style.backgroundImage='linear-gradient(to right,rgba(244,114,182,.25) 1px,transparent 1px),linear-gradient(to bottom,rgba(168,85,247,.25) 1px,transparent 1px)';
- }else if(distance>=500){
-  body.style.backgroundColor='#0f172a';
-  body.style.backgroundImage='linear-gradient(to right,rgba(56,189,248,.16) 1px,transparent 1px),linear-gradient(to bottom,rgba(56,189,248,.16) 1px,transparent 1px)';
- }else if(distance>=200){
-  body.style.backgroundColor='#fff7ed';
-  body.style.backgroundImage='linear-gradient(to right,rgba(251,146,60,.28) 1px,transparent 1px),linear-gradient(to bottom,rgba(251,146,60,.28) 1px,transparent 1px)';
- }else{
+ const stage=bossDefeatedCount%4;
+
+ body.classList.remove('bathroom-bg','bg-[#f0f9ff]','bg-amber-50','bg-slate-900','bg-fuchsia-50');
+ body.style.backgroundSize='36px 36px';
+
+ if(stage===0){
   body.style.backgroundColor='#f0f9ff';
-  body.style.backgroundImage='linear-gradient(to right,rgba(186,230,253,.55) 1px,transparent 1px),linear-gradient(to bottom,rgba(186,230,253,.55) 1px,transparent 1px)';
+  body.style.backgroundImage='linear-gradient(to right,rgba(186,230,253,.65) 1px,transparent 1px),linear-gradient(to bottom,rgba(186,230,253,.65) 1px,transparent 1px)';
+ }else if(stage===1){
+  body.style.backgroundColor='#dcfce7';
+  body.style.backgroundImage='linear-gradient(to right,rgba(74,222,128,.35) 1px,transparent 1px),linear-gradient(to bottom,rgba(34,197,94,.28) 1px,transparent 1px)';
+ }else if(stage===2){
+  body.style.backgroundColor='#fef3c7';
+  body.style.backgroundImage='radial-gradient(rgba(180,83,9,.22) 1.5px,transparent 1.5px),radial-gradient(rgba(146,64,14,.16) 1px,transparent 1px)';
+  body.style.backgroundSize='24px 24px';
+ }else{
+  body.style.backgroundColor='#fae8ff';
+  body.style.backgroundImage='repeating-linear-gradient(45deg,rgba(192,132,252,.14) 0px,rgba(192,132,252,.14) 2px,transparent 2px,transparent 8px),repeating-linear-gradient(-45deg,rgba(244,114,182,.14) 0px,rgba(244,114,182,.14) 2px,transparent 2px,transparent 8px)';
+  body.style.backgroundSize='16px 16px';
  }
 }
 
@@ -964,7 +975,6 @@ function startBossBattle(){
 
  setTimeout(()=>{$('bossWarningOverlay').classList.add('hidden');},2200);
 }
-
 function updateBossHUD(){
  const pct=Math.max(0,Math.ceil((boss.hp/boss.maxHp)*100));
  $('bossHpText').textContent=pct+'%';
@@ -993,11 +1003,13 @@ function damageBoss(amount,hitX,hitY){
 function defeatBoss(){
  const defeatedName=boss.kind==='MEGA_FAN'?'暴走メガ扇風機大王':'巨大ハサミ大王';
  boss.active=false;boss.defeated=true;bossDefeatedCount++;
+ applyBackgroundTheme();
+ const nextTile=tileStageName(bossDefeatedCount);
  $('bossHud').classList.add('hidden');
  distance+=150;durability=100;
  sound.playFanfare(true);
  floatText(boss.x,boss.y-40,`🎉 ${defeatedName} 撃破！！`,'#facc15');
- floatText(paper.x,paper.y-40,'+150.0m ＆ 全回復！','#10b981');
+ floatText(paper.x,paper.y-40,`+150.0m ＆ 全回復！（${nextTile}へ）`,'#10b981');
  for(let i=0;i<60;i++){
   const a=Math.PI*2*i/60;
   particles.push({
@@ -1279,7 +1291,6 @@ function updateBoss(gameDt){
   }
  }
 }
-
 function update(dt){
  for(let i=particles.length-1;i>=0;i--){
   const p=particles[i];
@@ -1328,7 +1339,6 @@ function update(dt){
  for(const m of MILESTONES){
   if(distance>=m&&!reachedMilestones.has(m))triggerMilestone(m);
  }
- applyBackgroundTheme();
 
  const nextBossDistance=(bossDefeatedCount+1)*1000;
  if(distance>=nextBossDistance&&!boss.active)startBossBattle();
@@ -1654,8 +1664,15 @@ function drawInvincibleAura(){
 
 function drawGuides(){
  const off=(distance*42)%90;
+ const stage=bossDefeatedCount%4;
+ let lineColor='rgba(125,211,252,.35)';
+ if(boss.active)lineColor='rgba(244,63,94,.28)';
+ else if(stage===1)lineColor='rgba(34,197,94,.28)';
+ else if(stage===2)lineColor='rgba(180,83,9,.24)';
+ else if(stage===3)lineColor='rgba(192,132,252,.28)';
+
  ctx.save();
- ctx.strokeStyle=boss.active?'rgba(244,63,94,.28)':'rgba(125,211,252,.35)';
+ ctx.strokeStyle=lineColor;
  ctx.lineWidth=2;ctx.setLineDash([8,12]);
  for(let x=45;x<W;x+=90){ctx.beginPath();ctx.moveTo(x,-off);ctx.lineTo(x,H);ctx.stroke();}
  ctx.restore();
@@ -1747,7 +1764,6 @@ function drawRoll(){
  ctx.beginPath();ctx.ellipse(x+rw/2,y,4.5,11,0,0,Math.PI*2);ctx.fill();
  ctx.restore();
 }
-
 function drawStarShape(x,y,inner,outer,points,color,rotation=0){
  ctx.save();
  ctx.translate(x,y);ctx.rotate(rotation);
