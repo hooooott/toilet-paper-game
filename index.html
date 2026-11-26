@@ -1,699 +1,531 @@
-
 <!DOCTYPE html>
 <html lang="ja">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>トイレットペーパー・ロングラン</title>
-<script src="[https://cdn.tailwindcss.com](https://cdn.tailwindcss.com)"></script>
-<link rel="preconnect" href="[https://fonts.googleapis.com](https://fonts.googleapis.com)">
-<link rel="preconnect" href="[https://fonts.gstatic.com](https://fonts.gstatic.com)" crossorigin>
-<link href="[https://fonts.googleapis.com/css2?family=M+PLUS+Rounded+1c:wght@500;700;800;900&display=swap](https://fonts.googleapis.com/css2?family=M+PLUS+Rounded+1c:wght@500;700;800;900&display=swap)" rel="stylesheet">
-<style>
-* { box-sizing: border-box; user-select: none; -webkit-user-select: none; -webkit-touch-callout: none; }
-html, body { margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden; touch-action: none; font-family: 'M PLUS Rounded 1c', sans-serif; background-color: #e0f2fe; }
-#gameCanvas { touch-action: none; display: block; width: 100%; height: 100%; }
-.bathroom-bg { background-color: #f0f9ff; background-image: linear-gradient(to right, rgba(186, 230, 253, 0.55) 1px, transparent 1px), linear-gradient(to bottom, rgba(186, 230, 253, 0.55) 1px, transparent 1px); background-size: 36px 36px; }
-.btn-pop { transition: transform 0.1s ease, box-shadow 0.1s ease; box-shadow: 0 5px 0 #0284c7; }
-.btn-pop:active { transform: translateY(4px); box-shadow: 0 1px 0 #0284c7; }
-.btn-pop-green { transition: transform 0.1s ease, box-shadow 0.1s ease; box-shadow: 0 5px 0 #15803d; }
-.btn-pop-green:active { transform: translateY(4px); box-shadow: 0 1px 0 #15803d; }
-@keyframes pulse-fast { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.04); } }
-.danger-pulse { animation: pulse-fast 0.35s infinite; }
-@keyframes banner-pop { 0% { transform: scale(0.82); opacity: 0; } 70% { transform: scale(1.05); opacity: 1; } 100% { transform: scale(1); opacity: 1; } }
-.record-banner-anim { animation: banner-pop 0.4s cubic-bezier(0.22, 1, 0.36, 1) forwards; }
-@keyframes rainbow-glow {
-0% { border-color: #f43f5e; box-shadow: 0 0 12px rgba(244, 63, 94, 0.5); }
-50% { border-color: #10b981; box-shadow: 0 0 12px rgba(16, 185, 129, 0.5); }
-100% { border-color: #a855f7; box-shadow: 0 0 12px rgba(168, 85, 247, 0.5); }
-}
-.star-hud-glow { animation: rainbow-glow 0.6s linear infinite; }
-</style>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>トイレペーパー ロングラン！</title>
+  <style>
+    * {
+      box-sizing: border-box;
+      user-select: none;
+      -webkit-user-select: none;
+      touch-action: none;
+    }
+    html, body {
+      margin: 0;
+      padding: 0;
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      background: #e8f0f7;
+      font-family: -apple-system, BlinkMacSystemFont, "Hiragino Sans", "Yu Gothic", sans-serif;
+      color: #1f2937;
+    }
+    #app {
+      position: relative;
+      width: 100%;
+      max-width: 480px;
+      height: 100dvh;
+      margin: 0 auto;
+      background: #ffffff;
+      box-shadow: 0 0 24px rgba(0, 0, 0, 0.12);
+      overflow: hidden;
+    }
+    canvas {
+      display: block;
+      width: 100%;
+      height: 100%;
+    }
+    .hud {
+      position: absolute;
+      top: 10px;
+      left: 10px;
+      right: 10px;
+      z-index: 10;
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 8px;
+      pointer-events: none;
+    }
+    .hud-box {
+      background: rgba(255, 255, 255, 0.92);
+      border: 2px solid #cbd5e1;
+      border-radius: 12px;
+      padding: 6px 10px;
+      font-size: 12px;
+      font-weight: 700;
+      line-height: 1.35;
+      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
+    }
+    .hud-val {
+      font-size: 16px;
+      color: #0284c7;
+    }
+    .durability-wrap {
+      position: absolute;
+      top: 66px;
+      left: 10px;
+      right: 10px;
+      z-index: 10;
+      background: rgba(255, 255, 255, 0.92);
+      border: 2px solid #cbd5e1;
+      border-radius: 12px;
+      padding: 6px 10px;
+      pointer-events: none;
+    }
+    .durability-label {
+      display: flex;
+      justify-content: space-between;
+      font-size: 11px;
+      font-weight: 700;
+      margin-bottom: 4px;
+    }
+    .bar-bg {
+      width: 100%;
+      height: 10px;
+      background: #e2e8f0;
+      border-radius: 999px;
+      overflow: hidden;
+    }
+    .bar-fill {
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(90deg, #22c55e, #eab308);
+      transition: width 0.08s linear, background 0.2s ease;
+    }
+    .overlay {
+      position: absolute;
+      inset: 0;
+      z-index: 20;
+      background: rgba(248, 250, 252, 0.94);
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      text-align: center;
+      padding: 20px;
+      gap: 12px;
+    }
+    .overlay.hidden {
+      display: none;
+    }
+    h1 {
+      margin: 0;
+      font-size: 24px;
+      line-height: 1.3;
+      color: #0f172a;
+    }
+    .desc {
+      margin: 0;
+      font-size: 13px;
+      line-height: 1.6;
+      color: #475569;
+    }
+    .rules {
+      text-align: left;
+      background: #f1f5f9;
+      border-radius: 12px;
+      padding: 12px 14px;
+      font-size: 12px;
+      line-height: 1.65;
+      color: #334155;
+      width: 100%;
+    }
+    .btn {
+      border: none;
+      border-radius: 999px;
+      padding: 14px 28px;
+      font-size: 16px;
+      font-weight: 800;
+      color: #ffffff;
+      background: linear-gradient(135deg, #0284c7, #2563eb);
+      box-shadow: 0 6px 16px rgba(37, 99, 235, 0.35);
+      cursor: pointer;
+    }
+    .btn:active {
+      transform: scale(0.97);
+    }
+  </style>
 </head>
-<body class="flex items-center justify-center bathroom-bg">
-<div id="game-wrapper" class="relative w-full h-full max-w-md bg-white/85 shadow-2xl overflow-hidden flex flex-col border-x-2 border-sky-200">
-<canvas id="gameCanvas"></canvas>
-<div id="hud" class="hidden absolute top-0 left-0 w-full p-3 pointer-events-none flex flex-col gap-2 z-10">
-<div class="flex items-start justify-between">
-<div class="bg-white/95 backdrop-blur-sm border-2 border-sky-300 rounded-2xl px-3.5 py-1.5 shadow-sm">
-<div class="text-[11px] font-bold text-sky-600 leading-none">のばした長さ</div>
-<div class="text-2xl font-extrabold text-slate-800 tracking-tight"><span id="distanceDisplay">0.0</span><span class="text-sm font-bold ml-0.5 text-sky-600">m</span></div>
-</div>
-<div class="flex items-center gap-2 pointer-events-auto">
-<div class="bg-amber-50/95 border-2 border-amber-300 rounded-2xl px-3 py-1.5 text-right shadow-sm">
-<div class="text-[10px] font-bold text-amber-600 leading-none">1位記録</div>
-<div class="text-sm font-extrabold text-amber-800"><span id="hudBestDisplay">0.0</span>m</div>
-</div>
-<button id="soundToggleBtn" type="button" aria-label="音声切り替え" class="w-10 h-10 bg-white/95 border-2 border-sky-300 rounded-full flex items-center justify-center text-sky-600 shadow-sm active:scale-95">
-<svg id="soundOnIcon" xmlns="[http://www.w3.org/2000/svg](http://www.w3.org/2000/svg)" class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon><path d="M15.54 8.46a5 5 0 0 1 0 7.07"></path><path d="M19.07 4.93a10 10 0 0 1 0 14.14"></path></svg>
-<svg id="soundOffIcon" xmlns="[http://www.w3.org/2000/svg](http://www.w3.org/2000/svg)" class="w-5 h-5 hidden text-slate-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon><line x1="23" y1="9" x2="17" y2="15"></line><line x1="17" y1="9" x2="23" y2="15"></line></svg>
-</button>
-</div>
-</div>
-<div id="tensionContainer" class="bg-white/95 backdrop-blur-sm border-2 border-sky-200 rounded-2xl px-3 py-1.5 shadow-sm transition-colors">
-<div class="flex justify-between items-center text-xs font-bold mb-1">
-<span id="tensionLabel" class="text-slate-600 flex items-center gap-1">🧻 紙の耐久度（ちぎれ注意・急操作NG！）</span>
-<span id="tensionPercent" class="text-sky-600 font-extrabold">100%</span>
-</div>
-<div class="w-full h-3 bg-slate-200 rounded-full overflow-hidden p-0.5">
-<div id="tensionBar" class="h-full w-full bg-gradient-to-r from-emerald-400 to-sky-400 rounded-full transition-all duration-75"></div>
-</div>
-</div>
-</div>
-<div id="touchHint" class="hidden absolute bottom-7 left-0 w-full flex justify-center pointer-events-none z-10">
-<div class="bg-slate-800/80 text-white text-xs font-bold px-4 py-2 rounded-full backdrop-blur-sm animate-bounce">👆 左右にやさしくスライドして紙を伸ばそう！</div>
-</div>
-<div id="startScreen" class="absolute inset-0 bg-sky-900/35 backdrop-blur-[2px] flex flex-col items-center justify-center p-4 z-20 overflow-y-auto">
-<div class="bg-white rounded-3xl p-5 w-full max-w-sm shadow-xl border-4 border-sky-200 text-center my-auto">
-<div class="inline-block bg-sky-100 text-sky-700 text-[11px] font-extrabold px-3 py-0.5 rounded-full mb-1.5">ちぎれたら即終了！スリルアクション</div>
-<h1 class="text-2xl font-black text-slate-800 leading-tight mb-0.5">トイレットペーパー
-<span class="text-sky-500">ロングラン！</span></h1>
-<p class="text-[11px] text-slate-500 font-bold mb-3">どこまで切らずに伸ばせるかな？</p>
-<div class="bg-slate-50 rounded-2xl p-3 text-left text-[11px] text-slate-600 space-y-1.5 mb-3.5 border border-slate-200">
-<div class="flex items-start gap-2"><span class="text-sm leading-none">👆</span><span><strong>左右にスライド</strong>して紙を誘導（急な横移動は「ちぎれ注意」！）</span></div>
-<div class="flex items-start gap-2"><span class="text-sm leading-none">🌟</span><span><strong>無敵スター</strong>でレインボー無敵化！障害物を吹き飛ばせる！</span></div>
-</div>
-<div class="bg-amber-50/80 border-2 border-amber-200 rounded-2xl p-3 mb-4 text-left">
-<div class="flex items-center justify-between mb-2">
-<span class="text-xs font-extrabold text-amber-800 flex items-center gap-1">🏆 マイベスト TOP 5</span>
-<button type="button" data-reset-trigger class="text-[10px] font-bold text-slate-500 hover:text-rose-600 bg-white/90 border border-slate-200 rounded-lg px-2 py-0.5 transition cursor-pointer">リセット</button>
-</div>
-<div id="startRankingList" class="space-y-1 text-xs"></div>
-</div>
-<button id="startBtn" type="button" class="w-full py-3.5 bg-sky-500 hover:bg-sky-400 text-white font-extrabold text-lg rounded-2xl btn-pop cursor-pointer">🧻 ゲームスタート！</button>
-</div>
-</div>
-<div id="gameOverScreen" class="hidden absolute inset-0 bg-slate-900/50 backdrop-blur-[2px] flex flex-col items-center justify-center p-4 z-20 overflow-y-auto">
-<div class="bg-white rounded-3xl p-5 w-full max-w-sm shadow-2xl border-4 border-rose-200 text-center my-auto">
-<div id="failReasonBadge" class="inline-block bg-rose-100 text-rose-600 text-[11px] font-extrabold px-3 py-0.5 rounded-full mb-1.5">ビリッ！紙がちぎれてしまった！</div>
-<h2 class="text-xl font-black text-slate-800 mb-2">記録発表</h2>
-<div id="recordBanner" class="hidden mb-2.5 py-1.5 px-3 rounded-2xl font-extrabold text-xs record-banner-anim"></div>
-<div class="bg-sky-50 border-2 border-sky-200 rounded-2xl py-2.5 px-4 mb-2.5">
-<div class="text-[11px] font-bold text-sky-600 leading-none mb-0.5">今回伸ばした長さ</div>
-<div class="text-3xl font-black text-slate-800"><span id="finalDistance">0.0</span><span class="text-base font-bold text-sky-600 ml-0.5">m</span></div>
-<p id="rankComment" class="text-[11px] font-bold text-slate-600 mt-1">称号：新人ペーパー職人</p>
-</div>
-<div class="bg-amber-50/80 border-2 border-amber-200 rounded-2xl p-3 mb-3.5 text-left">
-<div class="flex items-center justify-between mb-1.5">
-<span class="text-xs font-extrabold text-amber-800 flex items-center gap-1">🏆 マイベスト TOP 5</span>
-<button type="button" data-reset-trigger class="text-[10px] font-bold text-slate-500 hover:text-rose-600 bg-white/90 border border-slate-200 rounded-lg px-2 py-0.5 transition cursor-pointer">リセット</button>
-</div>
-<div id="gameOverRankingList" class="space-y-1 text-xs"></div>
-</div>
-<div class="flex flex-col gap-2">
-<button id="retryBtn" type="button" class="w-full py-3 bg-emerald-500 hover:bg-emerald-400 text-white font-extrabold text-base rounded-2xl btn-pop-green cursor-pointer">🔄 もう一度挑戦する</button>
-<button id="shareBtn" type="button" class="w-full py-2 bg-sky-100 hover:bg-sky-200 text-sky-700 font-extrabold text-xs rounded-2xl transition active:scale-95 cursor-pointer">📋 結果をコピーしてシェア</button>
-</div>
-</div>
-</div>
-<div id="resetConfirmModal" class="hidden absolute inset-0 bg-slate-900/60 backdrop-blur-[2px] flex items-center justify-center p-5 z-30">
-<div class="bg-white rounded-3xl p-5 w-full max-w-xs shadow-2xl border-2 border-rose-200 text-center">
-<div class="text-2xl mb-1">🗑️</div>
-<h3 class="text-base font-extrabold text-slate-800 mb-1">ランキングをリセットしますか？</h3>
-<p class="text-xs text-slate-500 font-bold mb-4">保存されているTOP 5の記録がすべて消去されます。</p>
-<div class="flex gap-2.5">
-<button id="cancelResetBtn" type="button" class="flex-1 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-extrabold text-xs rounded-xl cursor-pointer">キャンセル</button>
-<button id="confirmResetBtn" type="button" class="flex-1 py-2.5 bg-rose-500 hover:bg-rose-600 text-white font-extrabold text-xs rounded-xl shadow-sm cursor-pointer">リセットする</button>
-</div>
-</div>
-</div>
-<div id="toastMsg" class="hidden absolute bottom-6 left-1/2 -translate-x-1/2 bg-slate-800/90 text-white text-xs font-bold px-4 py-2.5 rounded-full shadow-lg z-40 whitespace-nowrap">クリップボードにコピーしました！</div>
-</div>
+<body>
+  <div id="app">
+    <div class="hud">
+      <div class="hud-box">
+        のばした長さ<br />
+        <span id="scoreText" class="hud-val">0.0m</span>
+      </div>
+      <div class="hud-box" style="text-align: right;">
+        1位記録<br />
+        <span id="bestText" class="hud-val">0.0m</span>
+      </div>
+    </div>
 
-<script>
-class SoundFX {
-constructor() {
-this.ctx = null; this.muted = false; this.lastRollTick = 0; this.lastWindTime = 0;
-this.bgmMode = 'NONE'; this.bgmTimer = null; this.bgmStep = 0; this.speedRatio = 0;
-}
-init() {
-try {
-if (!this.ctx) {
-const AudioCtx = window.AudioContext || window.webkitAudioContext;
-if (AudioCtx) this.ctx = new AudioCtx();
-}
-if (this.ctx && this.ctx.state === 'suspended') this.ctx.resume();
-} catch (e) {}
-}
-toggleMute() {
-this.muted = !this.muted;
-if (this.muted) this.stopBgmTimerOnly();
-else if (this.bgmMode === 'STAR') this.startStarBgm();
-else if (this.bgmMode === 'PLAYING') this.startPlayBgm();
-return this.muted;
-}
-setSpeedRatio(r) { this.speedRatio = Math.max(0, Math.min(1, r || 0)); }
-stopBgmTimerOnly() { if (this.bgmTimer) { clearTimeout(this.bgmTimer); this.bgmTimer = null; } }
-stopBgm() { this.bgmMode = 'NONE'; this.stopBgmTimerOnly(); }
-startPlayBgm() {
-this.init(); this.bgmMode = 'PLAYING'; this.stopBgmTimerOnly();
-if (this.muted || !this.ctx) return;
-const melody = [523.25, 0, 659.25, 783.99, 880.00, 783.99, 659.25, 587.33, 523.25, 659.25, 587.33, 698.46, 783.99, 0, 659.25, 0];
-const bass = [130.81, 0, 196.00, 0, 146.83, 0, 220.00, 0, 130.81, 0, 174.61, 0, 196.00, 0, 146.83, 0];
-const stepFn = () => {
-if (this.muted || this.bgmMode !== 'PLAYING' || !this.ctx) return;
-if (this.ctx.state === 'suspended') this.ctx.resume();
-const now = this.ctx.currentTime, i = this.bgmStep % melody.length;
-const dur = 0.225 - this.speedRatio * 0.032;
-if (melody[i] > 0) {
-const o = this.ctx.createOscillator(), g = this.ctx.createGain();
-o.type = 'triangle'; o.frequency.setValueAtTime(melody[i], now);
-g.gain.setValueAtTime(0.001, now); g.gain.linearRampToValueAtTime(0.055, now + 0.015); g.gain.exponentialRampToValueAtTime(0.001, now + dur * 0.9);
-o.connect(g); g.connect(this.ctx.destination); o.start(now); o.stop(now + dur);
-}
-if (bass[i] > 0) {
-const bo = this.ctx.createOscillator(), bg = this.ctx.createGain();
-bo.type = 'sine'; bo.frequency.setValueAtTime(bass[i], now);
-bg.gain.setValueAtTime(0.001, now); bg.gain.linearRampToValueAtTime(0.065, now + 0.015); bg.gain.exponentialRampToValueAtTime(0.001, now + dur * 1.3);
-bo.connect(bg); bg.connect(this.ctx.destination); bo.start(now); bo.stop(now + dur * 1.35);
-}
-this.bgmStep++; this.bgmTimer = setTimeout(stepFn, dur * 1000);
-};
-stepFn();
-}
-startStarBgm() {
-this.init(); this.bgmMode = 'STAR'; this.stopBgmTimerOnly();
-if (this.muted || !this.ctx) return;
-const starMel = [523.25, 523.25, 523.25, 440.00, 523.25, 0, 523.25, 440.00, 493.88, 493.88, 493.88, 392.00, 493.88, 0, 493.88, 392.00];
-const starBass = [130.81, 196.00, 261.63, 196.00, 130.81, 196.00, 261.63, 196.00, 123.47, 196.00, 246.94, 196.00, 123.47, 196.00, 246.94, 196.00];
-let sStep = 0;
-const stepFn = () => {
-if (this.muted || this.bgmMode !== 'STAR' || !this.ctx) return;
-if (this.ctx.state === 'suspended') this.ctx.resume();
-const now = this.ctx.currentTime, i = sStep % starMel.length, dur = 0.115;
-if (starMel[i] > 0) {
-const o = this.ctx.createOscillator(), g = this.ctx.createGain();
-o.type = 'square'; o.frequency.setValueAtTime(starMel[i] * 2, now);
-g.gain.setValueAtTime(0.001, now); g.gain.linearRampToValueAtTime(0.045, now + 0.008); g.gain.exponentialRampToValueAtTime(0.001, now + dur * 0.85);
-o.connect(g); g.connect(this.ctx.destination); o.start(now); o.stop(now + dur);
-}
-const bo = this.ctx.createOscillator(), bg = this.ctx.createGain();
-bo.type = 'triangle'; bo.frequency.setValueAtTime(starBass[i], now);
-bg.gain.setValueAtTime(0.001, now); bg.gain.linearRampToValueAtTime(0.075, now + 0.008); bg.gain.exponentialRampToValueAtTime(0.001, now + dur * 0.9);
-bo.connect(bg); bo.connect(this.ctx.destination); bo.start(now); bo.stop(now + dur);
-sStep++; this.bgmTimer = setTimeout(stepFn, dur * 1000);
-};
-stepFn();
-}
-playStarGet() {
-if (this.muted || !this.ctx) return;
-try {
-const now = this.ctx.currentTime;
-[523.25, 659.25, 783.99, 1046.50, 1318.51, 1567.98].forEach((f, idx) => {
-const o = this.ctx.createOscillator(), g = this.ctx.createGain();
-o.type = 'triangle'; o.frequency.setValueAtTime(f, now + idx * 0.045);
-g.gain.setValueAtTime(0.12, now + idx * 0.045); g.gain.exponentialRampToValueAtTime(0.001, now + idx * 0.045 + 0.25);
-o.connect(g); g.connect(this.ctx.destination); o.start(now + idx * 0.045); o.stop(now + idx * 0.045 + 0.26);
-});
-} catch (e) {}
-}
-playSmash() {
-if (this.muted || !this.ctx) return;
-try {
-const now = this.ctx.currentTime, o = this.ctx.createOscillator(), g = this.ctx.createGain();
-o.type = 'sine'; o.frequency.setValueAtTime(320, now); o.frequency.exponentialRampToValueAtTime(980, now + 0.14);
-g.gain.setValueAtTime(0.14, now); g.gain.exponentialRampToValueAtTime(0.001, now + 0.15);
-o.connect(g); g.connect(this.ctx.destination); o.start(now); o.stop(now + 0.16);
-} catch (e) {}
-}
-playRollTick(ratio) {
-if (this.muted || !this.ctx) return;
-try {
-const now = this.ctx.currentTime;
-if (now - this.lastRollTick < Math.max(0.06, 0.14 - ratio * 0.05)) return;
-this.lastRollTick = now;
-const o = this.ctx.createOscillator(), g = this.ctx.createGain();
-o.type = 'triangle'; o.frequency.setValueAtTime(220 + Math.random() * 55, now); o.frequency.exponentialRampToValueAtTime(95, now + 0.032);
-g.gain.setValueAtTime(0.022, now); g.gain.exponentialRampToValueAtTime(0.001, now + 0.032);
-o.connect(g); g.connect(this.ctx.destination); o.start(now); o.stop(now + 0.038);
-} catch (e) {}
-}
-playWindWhoosh() {
-if (this.muted || !this.ctx) return;
-try {
-const now = this.ctx.currentTime;
-if (now - this.lastWindTime < 0.16) return;
-this.lastWindTime = now;
-const dur = 0.15, len = Math.floor(this.ctx.sampleRate * dur), buf = this.ctx.createBuffer(1, len, this.ctx.sampleRate), ch = buf.getChannelData(0);
-for (let i = 0; i < len; i++) ch[i] = (Math.random() * 2 - 1) * Math.sin((i / len) * Math.PI);
-const src = this.ctx.createBufferSource(); src.buffer = buf;
-const flt = this.ctx.createBiquadFilter(); flt.type = 'bandpass'; flt.frequency.setValueAtTime(520, now); flt.frequency.exponentialRampToValueAtTime(880, now + dur); flt.Q.setValueAtTime(2.5, now);
-const g = this.ctx.createGain(); g.gain.setValueAtTime(0.05, now); g.gain.exponentialRampToValueAtTime(0.001, now + dur);
-src.connect(flt); flt.connect(g); g.connect(this.ctx.destination); src.start(now);
-} catch (e) {}
-}
-playItem(isGold = false) {
-if (this.muted || !this.ctx) return;
-try {
-const now = this.ctx.currentTime, freqs = isGold ? [587.33, 880, 1174.66] : [523.25, 783.99];
-freqs.forEach((f, idx) => {
-const o = this.ctx.createOscillator(), g = this.ctx.createGain();
-o.type = 'sine'; o.frequency.setValueAtTime(f, now + idx * 0.06);
-g.gain.setValueAtTime(0.11, now + idx * 0.06); g.gain.exponentialRampToValueAtTime(0.001, now + idx * 0.06 + 0.22);
-o.connect(g); g.connect(this.ctx.destination); o.start(now + idx * 0.06); o.stop(now + idx * 0.06 + 0.24);
-});
-} catch (e) {}
-}
-playWarning() {
-if (this.muted || !this.ctx) return;
-try {
-const now = this.ctx.currentTime, o = this.ctx.createOscillator(), g = this.ctx.createGain();
-o.type = 'sawtooth'; o.frequency.setValueAtTime(460, now); o.frequency.setValueAtTime(540, now + 0.045);
-g.gain.setValueAtTime(0.032, now); g.gain.exponentialRampToValueAtTime(0.001, now + 0.095);
-o.connect(g); g.connect(this.ctx.destination); o.start(now); o.stop(now + 0.1);
-} catch (e) {}
-}
-playTear() {
-if (this.muted || !this.ctx) return;
-try {
-const now = this.ctx.currentTime, len = Math.floor(this.ctx.sampleRate * 0.35), buf = this.ctx.createBuffer(1, len, this.ctx.sampleRate), ch = buf.getChannelData(0);
-for (let i = 0; i < len; i++) ch[i] = (Math.random() * 2 - 1) * Math.exp(-i / (len * 0.35));
-const src = this.ctx.createBufferSource(); src.buffer = buf;
-const flt = this.ctx.createBiquadFilter(); flt.type = 'bandpass'; flt.frequency.setValueAtTime(1400, now); flt.frequency.exponentialRampToValueAtTime(300, now + 0.35);
-const g = this.ctx.createGain(); g.gain.setValueAtTime(0.32, now); g.gain.exponentialRampToValueAtTime(0.01, now + 0.35);
-src.connect(flt); flt.connect(g); g.connect(this.ctx.destination); src.start(now);
-} catch (e) {}
-}
-playFanfare(isFirst = true) {
-if (this.muted || !this.ctx) return;
-try {
-const now = this.ctx.currentTime + 0.18;
-const notes = isFirst
-? [{ freq: 523.25, time: 0.0, dur: 0.12 }, { freq: 659.25, time: 0.11, dur: 0.12 }, { freq: 783.99, time: 0.22, dur: 0.12 }, { freq: 1046.50, time: 0.34, dur: 0.38 }, { freq: 880.00, time: 0.56, dur: 0.12 }, { freq: 1046.50, time: 0.70, dur: 0.45 }]
-: [{ freq: 523.25, time: 0.0, dur: 0.12 }, { freq: 659.25, time: 0.12, dur: 0.12 }, { freq: 783.99, time: 0.24, dur: 0.28 }];
-notes.forEach(n => {
-const o = this.ctx.createOscillator(), g = this.ctx.createGain();
-o.type = 'triangle'; o.frequency.setValueAtTime(n.freq, now + n.time);
-g.gain.setValueAtTime(0.001, now + n.time); g.gain.linearRampToValueAtTime(0.15, now + n.time + 0.02); g.gain.exponentialRampToValueAtTime(0.001, now + n.time + n.dur);
-o.connect(g); g.connect(this.ctx.destination); o.start(now + n.time); o.stop(now + n.time + n.dur + 0.02);
-});
-} catch (e) {}
-}
-}
-const sound = new SoundFX();
-const RANKING_STORAGE_KEY = 'tp_longrun_ranking_top5_v1';
-const LEGACY_BEST_KEY = 'tp_longrun_best_v1';
-function formatNowDateTime() {
-const d = new Date();
-return ${String(d.getMonth() + 1).padStart(2, '0')}/${String(d.getDate()).padStart(2, '0')} ${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')};
-}
-function loadRanking() {
-try {
-const raw = localStorage.getItem(RANKING_STORAGE_KEY);
-if (raw) {
-const p = JSON.parse(raw);
-if (Array.isArray(p)) return p.filter(x => typeof x.distance === 'number' && !Number.isNaN(x.distance)).map(x => ({ distance: Math.round(x.distance * 10) / 10, dateStr: x.dateStr || '--/-- --:--', id: x.id || String(Math.random()) })).sort((a, b) => b.distance - a.distance).slice(0, 5);
-}
-const leg = parseFloat(localStorage.getItem(LEGACY_BEST_KEY) || '0');
-if (leg > 0) { const init = [{ distance: Math.round(leg * 10) / 10, dateStr: formatNowDateTime(), id: 'legacy-best' }]; saveRanking(init); return init; }
-} catch (e) {}
-return [];
-}
-function saveRanking(list) { try { localStorage.setItem(RANKING_STORAGE_KEY, JSON.stringify(list.slice(0, 5))); } catch (e) {} }
-function clearRanking() { rankingList = []; try { localStorage.removeItem(RANKING_STORAGE_KEY); localStorage.removeItem(LEGACY_BEST_KEY); } catch (e) {} renderRankingBoards(); updateBestScoreUI(); }
-function recordScoreToRanking(rawDist) {
-const rounded = Math.round(rawDist * 10) / 10;
-if (rounded <= 0) return { rank: null, isFirstPlace: false };
-const prevTop = rankingList.length > 0 ? rankingList[0].distance : 0;
-const id = ${Date.now()}-${Math.random().toString(36).slice(2, 6)};
-const combined = [...rankingList, { distance: rounded, dateStr: formatNowDateTime(), id }].sort((a, b) => b.distance - a.distance).slice(0, 5);
-const idx = combined.findIndex(x => x.id === id);
-const rank = idx !== -1 ? idx + 1 : null;
-rankingList = combined; saveRanking(rankingList); renderRankingBoards(); updateBestScoreUI();
-return { rank, isFirstPlace: rank === 1 && rounded > prevTop };
-}
-function renderRankingBoards(highlightId = null) {
-const containers = [document.getElementById('startRankingList'), document.getElementById('gameOverRankingList')];
-const medals = ['🥇', '🥈', '🥉', '4.', '5.'];
-containers.forEach(c => {
-if (!c) return; c.innerHTML = '';
-if (rankingList.length === 0) {
-const el = document.createElement('div'); el.className = 'text-center py-3 text-slate-400 font-bold text-[11px]'; el.textContent = 'まだ記録がありません。最初の1位を目指そう！'; c.appendChild(el); return;
-}
-for (let i = 0; i < 5; i++) {
-const item = rankingList[i], row = document.createElement('div'), hi = item && highlightId && item.id === highlightId;
-row.className = flex items-center justify-between px-2.5 py-1 rounded-xl ${hi ? 'bg-amber-200/80 border border-amber-400 font-extrabold text-slate-900' : item ? 'bg-white/85 text-slate-700 font-bold' : 'bg-white/40 text-slate-400 font-medium'};
-const l = document.createElement('span'); l.className = 'flex items-center gap-1.5'; l.textContent = ${medals[i]} ${item ? ${item.distance.toFixed(1)}m : '---'};
-const r = document.createElement('span'); r.className = 'text-[10px] text-slate-400 tabular-nums'; r.textContent = item ? item.dateStr : '';
-row.appendChild(l); row.appendChild(r); c.appendChild(row);
-}
-});
-}
+    <div class="durability-wrap">
+      <div class="durability-label">
+        <span>🧻 紙の耐久度（急な横移動はちぎれ注意！）</span>
+        <span id="durText">100%</span>
+      </div>
+      <div class="bar-bg">
+        <div id="durBar" class="bar-fill"></div>
+      </div>
+    </div>
 
-const canvas = document.getElementById('gameCanvas'), ctx = canvas.getContext('2d'), wrapper = document.getElementById('game-wrapper');
-const hud = document.getElementById('hud'), distanceDisplay = document.getElementById('distanceDisplay'), hudBestDisplay = document.getElementById('hudBestDisplay');
-const tensionBar = document.getElementById('tensionBar'), tensionPercent = document.getElementById('tensionPercent'), tensionContainer = document.getElementById('tensionContainer'), tensionLabel = document.getElementById('tensionLabel'), touchHint = document.getElementById('touchHint');
-const startScreen = document.getElementById('startScreen'), gameOverScreen = document.getElementById('gameOverScreen'), finalDistanceEl = document.getElementById('finalDistance');
-const failReasonBadge = document.getElementById('failReasonBadge'), recordBanner = document.getElementById('recordBanner'), rankComment = document.getElementById('rankComment');
-const resetConfirmModal = document.getElementById('resetConfirmModal'), toastMsg = document.getElementById('toastMsg');
-const startBtn = document.getElementById('startBtn'), retryBtn = document.getElementById('retryBtn'), shareBtn = document.getElementById('shareBtn');
-const confirmResetBtn = document.getElementById('confirmResetBtn'), cancelResetBtn = document.getElementById('cancelResetBtn');
-const soundToggleBtn = document.getElementById('soundToggleBtn'), soundOnIcon = document.getElementById('soundOnIcon'), soundOffIcon = document.getElementById('soundOffIcon');
-let rankingList = loadRanking(), lastRecordedEntryId = null, width = 0, height = 0, dpr = 1;
-let gameState = 'START', distance = 0, speed = 230, rollAngle = 0, rollRadius = 38, durability = 100, lastWarningTime = 0;
-let starTimer = 0, rainbowHue = 0;
-const STAR_DURATION = 7.0;
-const paper = { x: 0, y: 0, targetX: 0, vx: 0, width: 34, trail: [] };
-const input = { isPointerDown: false, lastPointerX: 0, leftPressed: false, rightPressed: false };
-let entities = [], particles = [], floatingTexts = [], spawnTimer = 0, lastTime = 0, tearPoint = null;
-function getTopScore() { return rankingList.length > 0 ? rankingList[0].distance : 0; }
-function updateBestScoreUI() { hudBestDisplay.textContent = getTopScore().toFixed(1); }
-function showToast(msg) { toastMsg.textContent = msg; toastMsg.classList.remove('hidden'); setTimeout(() => toastMsg.classList.add('hidden'), 2200); }
-function getRollY() { return Math.max(115, height * 0.16); }
-function initPaperTrail() {
-paper.trail = []; const sy = getRollY() + 18, steps = 28;
-for (let i = 0; i <= steps; i++) { const t = i / steps; paper.trail.push({ x: paper.x, y: sy + (paper.y - sy) * t }); }
-}
-function resizeCanvas() {
-try {
-const rect = wrapper.getBoundingClientRect();
-dpr = Math.min(window.devicePixelRatio || 1, 2); width = Math.max(280, rect.width); height = Math.max(400, rect.height);
-canvas.width = Math.floor(width * dpr); canvas.height = Math.floor(height * dpr); ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-if (gameState === 'START') { paper.x = width / 2; paper.targetX = width / 2; paper.y = height * 0.44; initPaperTrail(); }
-} catch (e) {}
-}
-function startGame() {
-sound.init(); sound.setSpeedRatio(0); sound.startPlayBgm();
-gameState = 'PLAYING'; distance = 0; speed = 230; durability = 100; rollRadius = 38; starTimer = 0;
-entities = []; particles = []; floatingTexts = []; tearPoint = null; lastRecordedEntryId = null; spawnTimer = 0.65;
-paper.x = width / 2; paper.targetX = width / 2; paper.vx = 0; paper.y = height * 0.45; initPaperTrail();
-startScreen.classList.add('hidden'); gameOverScreen.classList.add('hidden'); resetConfirmModal.classList.add('hidden');
-hud.classList.remove('hidden'); touchHint.classList.remove('hidden'); updateHUD();
-}
-function activateStarMode() {
-const wasStar = starTimer > 0;
-starTimer = STAR_DURATION;
-durability = Math.min(100, durability + 25);
-sound.playStarGet();
-if (!wasStar) sound.startStarBgm();
-addFloatingText(paper.x, paper.y - 25, '🌟 無敵レインボーモード!!', '#eab308');
-for (let i = 0; i < 18; i++) {
-particles.push({
-x: paper.x, y: paper.y, vx: (Math.random() - 0.5) * 240, vy: (Math.random() - 0.5) * 240,
-size: 7 + Math.random() * 5, rot: Math.random() * Math.PI * 2, vRot: 8,
-color: hsl(${Math.random() * 360}, 95%, 60%), life: 0.75, isStar: true
-});
-}
-}
-function triggerGameOver(reasonText, bx = paper.x, by = paper.y) {
-if (gameState !== 'PLAYING') return;
-gameState = 'GAMEOVER'; starTimer = 0; sound.stopBgm(); sound.playTear(); tearPoint = { x: bx, y: by };
-for (let i = 0; i < 24; i++) particles.push({ x: bx + (Math.random() - 0.5) * 30, y: by + (Math.random() - 0.5) * 20, vx: (Math.random() - 0.5) * 260, vy: -60 - Math.random() * 180, size: 6 + Math.random() * 8, rot: Math.random() * Math.PI * 2, vRot: (Math.random() - 0.5) * 10, color: i % 3 === 0 ? '#bae6fd' : '#ffffff', life: 1.2 + Math.random() * 0.6 });
-const roundedDist = Math.round(distance * 10) / 10, { rank, isFirstPlace } = recordScoreToRanking(roundedDist);
-if (rankingList.length > 0 && rank !== null) lastRecordedEntryId = rankingList[rank - 1]?.id || null;
-renderRankingBoards(lastRecordedEntryId);
-recordBanner.classList.remove('hidden');
-if (isFirstPlace) { recordBanner.className = 'mb-2.5 py-1.5 px-3 rounded-2xl font-black text-xs bg-gradient-to-r from-amber-300 via-yellow-200 to-amber-300 text-amber-900 border-2 border-amber-400 shadow-sm record-banner-anim'; recordBanner.textContent = '🎉 NEW RECORD! 歴代1位を更新しました！'; sound.playFanfare(true); }
-else if (rank !== null) { recordBanner.className = 'mb-2.5 py-1.5 px-3 rounded-2xl font-extrabold text-xs bg-sky-100 text-sky-800 border-2 border-sky-300 record-banner-anim'; recordBanner.textContent = ⭐ TOP 5 ランクイン！（第${rank}位）; sound.playFanfare(false); }
-else recordBanner.classList.add('hidden');
-failReasonBadge.textContent = reasonText; finalDistanceEl.textContent = roundedDist.toFixed(1); rankComment.textContent = getRankTitle(roundedDist);
-touchHint.classList.add('hidden'); setTimeout(() => gameOverScreen.classList.remove('hidden'), 520);
-}
-function getRankTitle(m) {
-if (m < 10) return '称号：もったいない精神の見習い'; if (m < 25) return '称号：一般家庭のロール使い'; if (m < 50) return '称号：繊細な指先のペーパー職人';
-if (m < 80) return '称号：トイレの魔術師'; if (m < 120) return '称号：伝説のロングロールマスター'; return '称号：神に選ばれし無限ペーパー神';
-}
-function spawnEntity() {
-const margin = 42, sx = margin + Math.random() * (width - margin * 2), sy = height + 50, r = Math.random();
-if (r < 0.28) entities.push({ type: 'puddle', x: sx, y: sy, radius: 26 + Math.random() * 10, wobble: Math.random() * Math.PI * 2 });
-else if (r < 0.52) { const mv = distance > 18 && Math.random() < 0.45; entities.push({ type: 'scissors', x: sx, y: sy, radius: 22, vx: mv ? (Math.random() < 0.5 ? 75 : -75) : 0, snipPhase: Math.random() * Math.PI * 2 }); }
-else if (r < 0.70) { const fl = Math.random() < 0.5; entities.push({ type: 'catpaw', x: fl ? -30 : width + 30, y: sy, fromLeft: fl, reach: width * (0.34 + Math.random() * 0.14), phase: Math.random() * Math.PI * 2, radius: 22 }); }
-else if (r < 0.81) { const br = sx < width / 2; entities.push({ type: 'fan', x: br ? 34 : width - 34, y: sy, blowRight: br, radius: 26, bladeAngle: 0 }); }
-else if (r < 0.89) entities.push({ type: 'repair', x: sx, y: sy, radius: 20, bob: 0 });
-else if (r < 0.945) entities.push({ type: 'gold', x: sx, y: sy, radius: 21, bob: 0 });
-else entities.push({ type: 'star', x: sx, y: sy, radius: 22, bob: 0, spin: 0 });
-}
-function addFloatingText(x, y, text, color = '#0284c7') { floatingTexts.push({ x, y, text, color, life: 1.0 }); }
-function update(dt) {
-rainbowHue = (rainbowHue + 420 * dt) % 360;
-for (let i = particles.length - 1; i >= 0; i--) {
-const p = particles[i]; p.x += p.vx * dt; p.y += p.vy * dt;
-if (!p.isStar) p.vy += 420 * dt;
-p.rot += p.vRot * dt; p.life -= dt; if (p.life <= 0) particles.splice(i, 1);
-}
-for (let i = floatingTexts.length - 1; i >= 0; i--) { const ft = floatingTexts[i]; ft.y -= 45 * dt; ft.life -= dt; if (ft.life <= 0) floatingTexts.splice(i, 1); }
-if (gameState !== 'PLAYING') { if (gameState === 'START') rollAngle += 1.2 * dt; return; }
-const isStar = starTimer > 0;
-if (isStar) {
-starTimer -= dt;
-if (Math.random() < 0.65) {
-particles.push({
-x: paper.x + (Math.random() - 0.5) * 32, y: paper.y - Math.random() * 40,
-vx: (Math.random() - 0.5) * 70, vy: -40 - Math.random() * 60,
-size: 5 + Math.random() * 4, rot: Math.random() * Math.PI, vRot: 6,
-color: hsl(${(rainbowHue + Math.random() * 120) % 360}, 95%, 60%), life: 0.45, isStar: true
-});
-}
-if (starTimer <= 0) {
-starTimer = 0;
-sound.startPlayBgm();
-addFloatingText(paper.x, paper.y - 15, '無敵タイム終了', '#64748b');
-}
-}
-const baseSpeed = Math.min(540, 230 + distance * 2.1);
-speed = isStar ? baseSpeed * 1.25 : baseSpeed;
-distance += (speed / 42) * dt;
-rollAngle += (speed / 28) * dt;
-rollRadius = Math.max(18, 38 - distance * 0.08);
-const sRatio = (baseSpeed - 230) / 310;
-sound.setSpeedRatio(sRatio);
-sound.playRollTick(sRatio);
-if (input.leftPressed) paper.targetX -= 420 * dt;
-if (input.rightPressed) paper.targetX += 420 * dt;
-paper.targetX = Math.max(26, Math.min(width - 26, paper.targetX));
-const prevX = paper.x; paper.x += (paper.targetX - paper.x) * (1 - Math.exp(-16 * dt)); paper.vx = (paper.x - prevX) / Math.max(dt, 0.001);
-if (!isStar) {
-const absVx = Math.abs(paper.vx), stretchRatio = Math.abs(paper.x - width / 2) / (width * 0.5);
-if (absVx > 335) durability -= (30 + ((absVx - 335) / 460) * 68) * dt;
-else durability = Math.min(100, durability + (stretchRatio > 0.75 ? 5 : 11) * dt);
-if (durability < 30 && performance.now() - lastWarningTime > 450) { sound.playWarning(); lastWarningTime = performance.now(); }
-if (durability <= 0) { durability = 0; updateHUD(); triggerGameOver('ビリッ！急操作で紙がちぎれた！', paper.x, paper.y - 30); return; }
-}
-const rollBottomY = getRollY() + rollRadius * 0.55, steps = paper.trail.length - 1;
-for (let i = 0; i <= steps; i++) {
-const t = i / steps, ease = t * t * (3 - 2 * t), wave = Math.sin(distance * 3 - t * 5) * (2.5 * t);
-paper.trail[i].y = rollBottomY + (paper.y - rollBottomY) * t;
-paper.trail[i].x += (((width / 2) + (paper.x - width / 2) * ease + wave) - paper.trail[i].x) * Math.min(1, dt * (12 + t * 14));
-}
-spawnTimer -= dt;
-if (spawnTimer <= 0) { spawnEntity(); spawnTimer = Math.max(0.48, 1.18 - distance * 0.0045) * (0.8 + Math.random() * 0.4); }
-for (let i = entities.length - 1; i >= 0; i--) {
-const e = entities[i]; e.y -= speed * dt;
-if (e.type === 'puddle') e.wobble += 4 * dt;
-else if (e.type === 'scissors') { e.snipPhase += 12 * dt; e.x += e.vx * dt; if (e.x < 35 || e.x > width - 35) e.vx *= -1; }
-else if (e.type === 'catpaw') { e.phase += 4.5 * dt; e.x = e.fromLeft ? (-15 + (Math.sin(e.phase) * 0.5 + 0.5) * e.reach) : (width + 15 - (Math.sin(e.phase) * 0.5 + 0.5) * e.reach); }
-else if (e.type === 'fan') {
-e.bladeAngle += 18 * dt;
-if (!isStar && Math.abs(e.y - paper.y) < 48) { paper.targetX += (e.blowRight ? 185 : -185) * dt; durability -= 14 * dt; sound.playWindWhoosh(); }
-}
-else if (e.type === 'repair' || e.type === 'gold') e.bob += 5 * dt;
-else if (e.type === 'star') { e.bob += 6 * dt; e.spin += 4 * dt; }
-const pts = [{ x: paper.x, y: paper.y }, paper.trail[Math.floor(paper.trail.length * 0.78)]];
-let hit = false;
-for (const pt of pts) { if (pt && Math.hypot(pt.x - e.x, pt.y - e.y) < e.radius + paper.width * 0.36) { hit = true; break; } }
-if (hit) {
-if (e.type === 'star') { activateStarMode(); entities.splice(i, 1); continue; }
-if (e.type === 'repair') { durability = Math.min(100, durability + 35); sound.playItem(false); addFloatingText(e.x, e.y - 10, '耐久 +35%!', '#10b981'); entities.splice(i, 1); continue; }
-if (e.type === 'gold') { distance += 5.0; durability = Math.min(100, durability + 20); sound.playItem(true); addFloatingText(e.x, e.y - 10, '+5.0m ボーナス!', '#f59e0b'); entities.splice(i, 1); continue; }
-if (isStar && (e.type === 'puddle' || e.type === 'scissors' || e.type === 'catpaw' || e.type === 'fan')) {
-distance += 1.0; sound.playSmash(); addFloatingText(e.x, e.y - 10, '💥 撃破 +1.0m!', '#ec4899');
-for (let k = 0; k < 10; k++) {
-particles.push({
-x: e.x, y: e.y, vx: (Math.random() - 0.5) * 280, vy: -80 - Math.random() * 180,
-size: 6 + Math.random() * 5, rot: Math.random() * 6, vRot: 9,
-color: hsl(${(rainbowHue + k * 36) % 360}, 90%, 60%), life: 0.65, isStar: true
-});
-}
-entities.splice(i, 1); continue;
-}
-if (e.type === 'puddle') { triggerGameOver('ビチャッ！水たまりでふやけた！', e.x, e.y); return; }
-if (e.type === 'scissors') { triggerGameOver('チョキン！ハサミで切られた！', e.x, e.y); return; }
-if (e.type === 'catpaw') { triggerGameOver('ニャー！猫に引きちぎられた！', e.x, e.y); return; }
-}
-if (e.y < -80) entities.splice(i, 1);
-}
-updateHUD();
-}
-function updateHUD() {
-distanceDisplay.textContent = distance.toFixed(1);
-tensionContainer.classList.remove('border-rose-400', 'danger-pulse', 'border-sky-200', 'star-hud-glow');
-if (starTimer > 0) {
-const starPct = Math.max(0, Math.min(100, Math.round((starTimer / STAR_DURATION) * 100)));
-tensionLabel.textContent = 🌟 無敵レインボー中！（残り ${starTimer.toFixed(1)}秒）;
-tensionPercent.textContent = '無敵!';
-tensionPercent.className = 'text-amber-500 font-black';
-tensionBar.style.width = ${starPct}%;
-tensionBar.className = 'h-full bg-gradient-to-r from-rose-500 via-amber-400 to-sky-400 rounded-full transition-all duration-75';
-tensionContainer.classList.add('star-hud-glow');
-return;
-}
-tensionLabel.textContent = '🧻 紙の耐久度（ちぎれ注意・急操作NG！）';
-const pct = Math.max(0, Math.min(100, Math.round(durability)));
-tensionPercent.textContent = ${pct}%; tensionBar.style.width = ${pct}%;
-if (pct <= 30) { tensionBar.className = 'h-full bg-gradient-to-r from-rose-500 to-red-600 rounded-full transition-all duration-75'; tensionPercent.className = 'text-rose-600 font-extrabold'; tensionContainer.classList.add('border-rose-400', 'danger-pulse'); }
-else if (pct <= 60) { tensionBar.className = 'h-full bg-gradient-to-r from-amber-400 to-orange-400 rounded-full transition-all duration-75'; tensionPercent.className = 'text-amber-600 font-extrabold'; tensionContainer.classList.add('border-sky-200'); }
-else { tensionBar.className = 'h-full bg-gradient-to-r from-emerald-400 to-sky-400 rounded-full transition-all duration-75'; tensionPercent.className = 'text-sky-600 font-extrabold'; tensionContainer.classList.add('border-sky-200'); }
-}
-function draw() {
-ctx.clearRect(0, 0, width, height);
-const isStar = starTimer > 0;
-const offset = (distance * 42) % 90; ctx.save();
-ctx.strokeStyle = isStar ? hsla(${rainbowHue}, 85%, 65%, 0.45) : 'rgba(125, 211, 252, 0.35)';
-ctx.lineWidth = 2; ctx.setLineDash([8, 12]);
-for (let x = 45; x < width; x += 90) { ctx.beginPath(); ctx.moveTo(x, -offset); ctx.lineTo(x, height); ctx.stroke(); }
-ctx.restore();
-entities.forEach(drawEntity);
-if (gameState !== 'GAMEOVER') drawPaperRibbon(); else if (tearPoint) drawTornPaper();
-drawPaperRoll();
-particles.forEach(p => {
-ctx.save(); ctx.translate(p.x, p.y); ctx.rotate(p.rot);
-ctx.fillStyle = p.color;
-if (p.isStar) {
-drawStarShape(ctx, 0, 0, 5, p.size, p.size * 0.45); ctx.fill();
-} else {
-ctx.strokeStyle = '#cbd5e1'; ctx.lineWidth = 1;
-ctx.fillRect(-p.size / 2, -p.size / 2, p.size, p.size * 0.7); ctx.strokeRect(-p.size / 2, -p.size / 2, p.size, p.size * 0.7);
-}
-ctx.restore();
-});
-floatingTexts.forEach(ft => { ctx.save(); ctx.globalAlpha = Math.max(0, ft.life); ctx.font = '800 15px "M PLUS Rounded 1c", sans-serif'; ctx.textAlign = 'center'; ctx.lineWidth = 4; ctx.strokeStyle = '#ffffff'; ctx.strokeText(ft.text, ft.x, ft.y); ctx.fillStyle = ft.color; ctx.fillText(ft.text, ft.x, ft.y); ctx.restore(); });
-}
-function drawStarShape(c, cx, cy, spikes, outerR, innerR) {
-let rot = Math.PI / 2 * 3, x = cx, y = cy, step = Math.PI / spikes;
-c.beginPath(); c.moveTo(cx, cy - outerR);
-for (let i = 0; i < spikes; i++) {
-x = cx + Math.cos(rot) * outerR; y = cy + Math.sin(rot) * outerR; c.lineTo(x, y); rot += step;
-x = cx + Math.cos(rot) * innerR; y = cy + Math.sin(rot) * innerR; c.lineTo(x, y); rot += step;
-}
-c.lineTo(cx, cy - outerR); c.closePath();
-}
-function drawPaperRibbon() {
-if (paper.trail.length < 2) return;
-const halfW = paper.width / 2, dangerRatio = Math.max(0, (55 - durability) / 55), isStar = starTimer > 0;
-ctx.save();
-if (isStar) { ctx.shadowColor = hsl(${rainbowHue}, 95%, 55%); ctx.shadowBlur = 16; }
-ctx.beginPath();
-paper.trail.forEach((pt, i) => i === 0 ? ctx.moveTo(pt.x - halfW + 4, pt.y + 6) : ctx.lineTo(pt.x - halfW + 4, pt.y + 6));
-for (let i = paper.trail.length - 1; i >= 0; i--) ctx.lineTo(paper.trail[i].x + halfW + 4, paper.trail[i].y + 6);
-ctx.closePath(); ctx.fillStyle = 'rgba(15, 23, 42, 0.08)'; ctx.fill();
-ctx.beginPath();
-paper.trail.forEach((pt, i) => i === 0 ? ctx.moveTo(pt.x - halfW, pt.y) : ctx.lineTo(pt.x - halfW, pt.y));
-const tip = paper.trail[paper.trail.length - 1];
-for (let t = 0; t <= 5; t++) ctx.lineTo((tip.x - halfW) + (paper.width * (t / 5)), tip.y + (t % 2 === 0 ? 0 : 4));
-for (let i = paper.trail.length - 1; i >= 0; i--) ctx.lineTo(paper.trail[i].x + halfW, paper.trail[i].y);
-ctx.closePath();
-if (isStar) {
-const topPt = paper.trail[0], rbGrad = ctx.createLinearGradient(0, topPt.y, 0, tip.y);
-for (let s = 0; s <= 5; s++) rbGrad.addColorStop(s / 5, hsl(${(rainbowHue + s * 60) % 360}, 95%, 78%));
-ctx.fillStyle = rbGrad; ctx.fill();
-ctx.lineWidth = 2.5; ctx.strokeStyle = hsl(${(rainbowHue + 180) % 360}, 95%, 50%); ctx.stroke();
-} else {
-const c = Math.round(255 - dangerRatio * 145); ctx.fillStyle = rgb(255, ${c}, ${c}); ctx.fill();
-ctx.lineWidth = 2; ctx.strokeStyle = dangerRatio > 0.4 ? '#f43f5e' : '#cbd5e1'; ctx.stroke();
-}
-ctx.shadowBlur = 0;
-ctx.strokeStyle = isStar ? 'rgba(255,255,255,0.75)' : (dangerRatio > 0.4 ? 'rgba(244, 63, 94, 0.5)' : 'rgba(148, 163, 184, 0.55)');
-ctx.lineWidth = 1.5; ctx.setLineDash([3, 3]);
-const po = ((distance * 42) % 38) * 0.15;
-for (let i = 2; i < paper.trail.length - 1; i += 4) { const pt = paper.trail[i]; ctx.beginPath(); ctx.moveTo(pt.x - halfW + 2, pt.y + po); ctx.lineTo(pt.x + halfW - 2, pt.y + po); ctx.stroke(); }
-ctx.setLineDash([]);
-ctx.beginPath(); ctx.arc(tip.x, tip.y - 6, 7, 0, Math.PI * 2);
-ctx.fillStyle = isStar ? hsla(${rainbowHue}, 95%, 55%, 0.45) : (dangerRatio > 0.4 ? 'rgba(244, 63, 94, 0.25)' : 'rgba(14, 165, 233, 0.22)');
-ctx.fill(); ctx.restore();
-}
-function drawTornPaper() {
-const halfW = paper.width / 2, topPt = paper.trail[0]; if (!topPt) return;
-ctx.save(); ctx.beginPath(); ctx.moveTo(topPt.x - halfW, topPt.y); ctx.lineTo(topPt.x - halfW, topPt.y + 42); ctx.lineTo(topPt.x - 6, topPt.y + 34); ctx.lineTo(topPt.x + 4, topPt.y + 46); ctx.lineTo(topPt.x + halfW, topPt.y + 36); ctx.lineTo(topPt.x + halfW, topPt.y); ctx.closePath();
-ctx.fillStyle = '#ffffff'; ctx.fill(); ctx.strokeStyle = '#cbd5e1'; ctx.lineWidth = 2; ctx.stroke(); ctx.restore();
-}
-function drawPaperRoll() {
-const cx = width / 2, cy = getRollY(), rollWidth = 86, r = rollRadius, isStar = starTimer > 0;
-ctx.save(); ctx.strokeStyle = '#94a3b8'; ctx.lineWidth = 6; ctx.lineCap = 'round';
-ctx.beginPath(); ctx.moveTo(cx - rollWidth / 2 - 12, cy - 26); ctx.lineTo(cx - rollWidth / 2 - 12, cy); ctx.lineTo(cx + rollWidth / 2 + 12, cy); ctx.lineTo(cx + rollWidth / 2 + 12, cy - 26); ctx.stroke();
-ctx.fillStyle = 'rgba(15, 23, 42, 0.1)'; ctx.beginPath(); ctx.roundRect(cx - rollWidth / 2 + 3, cy - r + 5, rollWidth, r * 2, 10); ctx.fill();
-const grad = ctx.createLinearGradient(0, cy - r, 0, cy + r);
-if (isStar) {
-grad.addColorStop(0, hsl(${rainbowHue}, 95%, 75%)); grad.addColorStop(0.5, '#ffffff'); grad.addColorStop(1, hsl(${(rainbowHue + 180) % 360}, 95%, 75%));
-} else {
-grad.addColorStop(0, '#e2e8f0'); grad.addColorStop(0.25, '#ffffff'); grad.addColorStop(0.75, '#f8fafc'); grad.addColorStop(1, '#cbd5e1');
-}
-ctx.fillStyle = grad; ctx.strokeStyle = isStar ? hsl(${rainbowHue}, 90%, 50%) : '#94a3b8'; ctx.lineWidth = 2;
-ctx.beginPath(); ctx.roundRect(cx - rollWidth / 2, cy - r, rollWidth, r * 2, 8); ctx.fill(); ctx.stroke();
-ctx.save(); ctx.beginPath(); ctx.roundRect(cx - rollWidth / 2, cy - r, rollWidth, r * 2, 8); ctx.clip();
-ctx.strokeStyle = 'rgba(148, 163, 184, 0.35)'; ctx.lineWidth = 1.5; ctx.setLineDash([4, 4]);
-for (let k = -2; k <= 2; k++) { const y = cy + Math.cos((rollAngle + k * 0.9) % Math.PI) * (r * 0.88); ctx.beginPath(); ctx.moveTo(cx - rollWidth / 2, y); ctx.lineTo(cx + rollWidth / 2, y); ctx.stroke(); }
-ctx.restore();
-const sideX = cx + rollWidth / 2;
-ctx.fillStyle = '#f1f5f9'; ctx.strokeStyle = '#94a3b8'; ctx.lineWidth = 2; ctx.beginPath(); ctx.ellipse(sideX, cy, 11, r, 0, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
-ctx.fillStyle = '#b45309'; ctx.beginPath(); ctx.ellipse(sideX, cy, 4.5, 11, 0, 0, Math.PI * 2); ctx.fill(); ctx.restore();
-}
-function drawEntity(e) {
-ctx.save(); ctx.translate(e.x, e.y);
-if (e.type === 'puddle') {
-ctx.scale(1 + Math.sin(e.wobble) * 0.06, 1 + Math.cos(e.wobble) * 0.06);
-ctx.fillStyle = 'rgba(56, 189, 248, 0.78)'; ctx.strokeStyle = '#0284c7'; ctx.lineWidth = 2.5; ctx.beginPath(); ctx.arc(0, 0, e.radius, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
-ctx.fillStyle = 'rgba(255, 255, 255, 0.75)'; ctx.beginPath(); ctx.ellipse(-e.radius * 0.3, -e.radius * 0.3, e.radius * 0.28, e.radius * 0.14, -0.5, 0, Math.PI * 2); ctx.fill();
-ctx.font = 'bold 11px "M PLUS Rounded 1c", sans-serif'; ctx.fillStyle = '#0369a1'; ctx.textAlign = 'center'; ctx.fillText('みず', 0, 4);
-} else if (e.type === 'scissors') {
-const oa = 0.22 + Math.abs(Math.sin(e.snipPhase)) * 0.35; ctx.rotate(-Math.PI / 2);
-[oa, -oa].forEach((ang, idx) => { ctx.save(); ctx.rotate(ang); ctx.fillStyle = idx === 0 ? '#cbd5e1' : '#94a3b8'; ctx.strokeStyle = '#475569'; ctx.lineWidth = 2; ctx.beginPath(); ctx.moveTo(0, -3); ctx.lineTo(24, 0); ctx.lineTo(0, 4); ctx.closePath(); ctx.fill(); ctx.stroke(); ctx.restore(); });
-ctx.strokeStyle = '#ef4444'; ctx.lineWidth = 4; ctx.beginPath(); ctx.arc(-10, -8, 6, 0, Math.PI * 2); ctx.stroke(); ctx.beginPath(); ctx.arc(-10, 8, 6, 0, Math.PI * 2); ctx.stroke();
-} else if (e.type === 'catpaw') {
-ctx.scale(e.fromLeft ? 1 : -1, 1);
-ctx.fillStyle = '#fef3c7'; ctx.strokeStyle = '#d97706'; ctx.lineWidth = 2.5; ctx.beginPath(); ctx.roundRect(-180, -16, 185, 32, 16); ctx.fill(); ctx.stroke();
-ctx.fillStyle = '#f59e0b'; for (let s = -140; s <= -35; s += 35) ctx.fillRect(s, -15, 10, 12);
-ctx.fillStyle = '#fb7185'; ctx.beginPath(); ctx.arc(0, 0, 7, 0, Math.PI * 2); ctx.fill();
-[[-7, -9], [2, -10], [8, -4], [4, 8]].forEach(([px, py]) => { ctx.beginPath(); ctx.arc(px, py, 3.2, 0, Math.PI * 2); ctx.fill(); });
-} else if (e.type === 'fan') {
-const dir = e.blowRight ? 1 : -1; ctx.strokeStyle = 'rgba(56, 189, 248, 0.55)'; ctx.lineWidth = 2; ctx.setLineDash([8, 8]);
-for (let row = -16; row <= 16; row += 16) { ctx.beginPath(); ctx.moveTo(dir * 26, row); ctx.lineTo(dir * (width * 0.65), row); ctx.stroke(); }
-ctx.setLineDash([]); ctx.fillStyle = '#e0f2fe'; ctx.strokeStyle = '#0284c7'; ctx.lineWidth = 2.5; ctx.beginPath(); ctx.arc(0, 0, 22, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
-ctx.save(); ctx.rotate(e.bladeAngle); ctx.fillStyle = '#38bdf8';
-for (let b = 0; b < 3; b++) { ctx.rotate((Math.PI * 2) / 3); ctx.beginPath(); ctx.ellipse(0, -9, 4, 8, 0, 0, Math.PI * 2); ctx.fill(); }
-ctx.restore();
-} else if (e.type === 'repair' || e.type === 'gold') {
-const isG = e.type === 'gold'; ctx.scale(1 + Math.sin(e.bob) * (isG ? 0.1 : 0.08), 1 + Math.sin(e.bob) * (isG ? 0.1 : 0.08));
-ctx.fillStyle = isG ? '#fef3c7' : '#d1fae5'; ctx.strokeStyle = isG ? '#f59e0b' : '#10b981'; ctx.lineWidth = isG ? 3 : 2.5; ctx.beginPath(); ctx.arc(0, 0, e.radius, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
-ctx.fillStyle = isG ? '#fbbf24' : '#ffffff'; ctx.strokeStyle = isG ? '#b45309' : '#059669'; ctx.lineWidth = 1.8; ctx.beginPath(); ctx.roundRect(-10, -8, 20, 16, 4); ctx.fill(); ctx.stroke();
-ctx.font = '800 10px "M PLUS Rounded 1c", sans-serif'; ctx.fillStyle = isG ? '#b45309' : '#047857'; ctx.textAlign = 'center'; ctx.fillText(isG ? '+5m' : '回復', 0, 16);
-} else if (e.type === 'star') {
-const sc = 1 + Math.sin(e.bob) * 0.14;
-ctx.scale(sc, sc);
-ctx.shadowColor = hsl(${rainbowHue}, 95%, 55%); ctx.shadowBlur = 12;
-ctx.fillStyle = 'rgba(255, 255, 255, 0.9)'; ctx.strokeStyle = hsl(${rainbowHue}, 90%, 55%); ctx.lineWidth = 3;
-ctx.beginPath(); ctx.arc(0, 0, e.radius, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
-ctx.save(); ctx.rotate(Math.sin(e.spin) * 0.25);
-drawStarShape(ctx, 0, 0, 5, 15, 7); ctx.fillStyle = '#facc15'; ctx.fill(); ctx.lineWidth = 2; ctx.strokeStyle = '#ca8a04'; ctx.stroke();
-ctx.fillStyle = '#1e293b'; ctx.fillRect(-3.5, -3, 2, 4.5); ctx.fillRect(1.5, -3, 2, 4.5);
-ctx.restore();
-}
-ctx.restore();
-}
-function gameLoop(ts) {
-if (!lastTime) lastTime = ts;
-const dt = Math.min(0.05, (ts - lastTime) / 1000); lastTime = ts;
-update(dt); draw(); requestAnimationFrame(gameLoop);
-}
-function handlePointerDown(e) { if (gameState !== 'PLAYING') return; sound.init(); input.isPointerDown = true; input.lastPointerX = e.touches ? e.touches[0].clientX : e.clientX; touchHint.classList.add('hidden'); }
-function handlePointerMove(e) { if (gameState !== 'PLAYING' || !input.isPointerDown) return; const cx = e.touches ? e.touches[0].clientX : e.clientX; paper.targetX += (cx - input.lastPointerX) * 1.15; input.lastPointerX = cx; }
-function handlePointerUp() { input.isPointerDown = false; }
-canvas.addEventListener('touchstart', handlePointerDown, { passive: true }); canvas.addEventListener('touchmove', handlePointerMove, { passive: true }); canvas.addEventListener('touchend', handlePointerUp); canvas.addEventListener('touchcancel', handlePointerUp);
-canvas.addEventListener('mousedown', handlePointerDown); window.addEventListener('mousemove', handlePointerMove); window.addEventListener('mouseup', handlePointerUp);
-window.addEventListener('keydown', e => { if (e.key === 'ArrowLeft' || e.key === 'a' || e.key === 'A') input.leftPressed = true; if (e.key === 'ArrowRight' || e.key === 'd' || e.key === 'D') input.rightPressed = true; });
-window.addEventListener('keyup', e => { if (e.key === 'ArrowLeft' || e.key === 'a' || e.key === 'A') input.leftPressed = false; if (e.key === 'ArrowRight' || e.key === 'd' || e.key === 'D') input.rightPressed = false; });
-startBtn.addEventListener('click', startGame); retryBtn.addEventListener('click', startGame);
-soundToggleBtn.addEventListener('click', () => { sound.init(); const m = sound.toggleMute(); soundOnIcon.classList.toggle('hidden', m); soundOffIcon.classList.toggle('hidden', !m); });
-document.querySelectorAll('[data-reset-trigger]').forEach(b => b.addEventListener('click', () => resetConfirmModal.classList.remove('hidden')));
-cancelResetBtn.addEventListener('click', () => resetConfirmModal.classList.add('hidden'));
-confirmResetBtn.addEventListener('click', () => { lastRecordedEntryId = null; clearRanking(); resetConfirmModal.classList.add('hidden'); showToast('TOP 5 ランキングをリセットしました'); });
-shareBtn.addEventListener('click', () => {
-const r = Math.round(distance * 10) / 10, txt = 🧻 トイレットペーパー・ロングランで【${r.toFixed(1)}m】伸ばしました！（1位記録: ${getTopScore().toFixed(1)}m） #トイレットペーパーゲーム;
-const ta = document.createElement('textarea'); ta.value = txt; document.body.appendChild(ta); ta.select();
-try { document.execCommand('copy'); showToast('クリップボードにコピーしました！'); } catch (e) { showToast('コピーできませんでした'); }
-document.body.removeChild(ta);
-});
-window.addEventListener('resize', resizeCanvas);
-window.onload = () => { renderRankingBoards(); updateBestScoreUI(); resizeCanvas(); requestAnimationFrame(gameLoop); };
-</script>
+    <canvas id="gameCanvas"></canvas>
+
+    <div id="startOverlay" class="overlay">
+      <h1>🧻 トイレペーパー<br />ロングラン！</h1>
+      <p class="desc">どこまで切らずに伸ばせるかな？</p>
+      <div class="rules">
+        👆 左右にスライド（PCは左右キー/マウス）して紙を誘導<br />
+        ⚠️ 急に大きく動かすと紙が傷んで耐久度が減るよ<br />
+        ⭐ 無敵スターでレインボー無敵化！障害物を吹き飛ばせる！
+      </div>
+      <button id="startBtn" class="btn">ゲームスタート</button>
+    </div>
+
+    <div id="gameOverOverlay" class="overlay hidden">
+      <h1 id="endTitle">紙がちぎれた！</h1>
+      <p class="desc" id="endScore">今回の記録：0.0m</p>
+      <p class="desc" id="endBest">自己ベスト：0.0m</p>
+      <button id="retryBtn" class="btn">もう一度遊ぶ</button>
+    </div>
+  </div>
+
+  <script>
+    (() => {
+      const canvas = document.getElementById("gameCanvas");
+      const ctx = canvas.getContext("2d");
+      const app = document.getElementById("app");
+
+      const scoreText = document.getElementById("scoreText");
+      const bestText = document.getElementById("bestText");
+      const durText = document.getElementById("durText");
+      const durBar = document.getElementById("durBar");
+      const startOverlay = document.getElementById("startOverlay");
+      const gameOverOverlay = document.getElementById("gameOverOverlay");
+      const startBtn = document.getElementById("startBtn");
+      const retryBtn = document.getElementById("retryBtn");
+      const endTitle = document.getElementById("endTitle");
+      const endScore = document.getElementById("endScore");
+      const endBest = document.getElementById("endBest");
+
+      const BEST_KEY = "tp_longrun_best_v1";
+      let bestMeters = parseFloat(localStorage.getItem(BEST_KEY) || "0") || 0;
+      bestText.textContent = bestMeters.toFixed(1) + "m";
+
+      let width = 360;
+      let height = 640;
+      let dpr = 1;
+
+      function resize() {
+        const rect = app.getBoundingClientRect();
+        width = Math.max(280, rect.width);
+        height = Math.max(420, rect.height);
+        dpr = Math.min(window.devicePixelRatio || 1, 2);
+        canvas.width = Math.floor(width * dpr);
+        canvas.height = Math.floor(height * dpr);
+        ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      }
+      resize();
+      window.addEventListener("resize", resize);
+
+      let state = "title"; // "title" | "playing" | "gameover"
+      let distanceMeters = 0;
+      let durability = 100;
+      let speed = 210; // px/sec
+      let starTimer = 0;
+      let hue = 0;
+
+      // 紙の先端位置
+      let paperX = width * 0.5;
+      let targetX = width * 0.5;
+      let prevPaperX = width * 0.5;
+      const paperY = () => Math.min(height * 0.72, height - 130);
+      const paperWidth = 64;
+
+      // 障害物・アイテム配列
+      let entities = [];
+      let spawnTimer = 0;
+      let lastTime = performance.now();
+
+      function resetGame() {
+        distanceMeters = 0;
+        durability = 100;
+        speed = 210;
+        starTimer = 0;
+        paperX = width * 0.5;
+        targetX = width * 0.5;
+        prevPaperX = width * 0.5;
+        entities = [];
+        spawnTimer = 0.4;
+        updateHud();
+      }
+
+      function updateHud() {
+        scoreText.textContent = distanceMeters.toFixed(1) + "m";
+        if (distanceMeters > bestMeters) {
+          bestMeters = distanceMeters;
+          localStorage.setItem(BEST_KEY, bestMeters.toFixed(1));
+        }
+        bestText.textContent = bestMeters.toFixed(1) + "m";
+
+        const d = Math.max(0, Math.min(100, durability));
+        durText.textContent = Math.round(d) + "%";
+        durBar.style.width = d + "%";
+        if (d > 50) {
+          durBar.style.background = "linear-gradient(90deg, #22c55e, #84cc16)";
+        } else if (d > 25) {
+          durBar.style.background = "linear-gradient(90deg, #eab308, #f97316)";
+        } else {
+          durBar.style.background = "#ef4444";
+        }
+      }
+
+      function startGame() {
+        resize();
+        resetGame();
+        state = "playing";
+        startOverlay.classList.add("hidden");
+        gameOverOverlay.classList.add("hidden");
+      }
+
+      function gameOver(reason) {
+        if (state !== "playing") return;
+        state = "gameover";
+        updateHud();
+        endTitle.textContent = reason || "紙がちぎれた！";
+        endScore.textContent = "今回の記録：" + distanceMeters.toFixed(1) + "m";
+        endBest.textContent = "自己ベスト：" + bestMeters.toFixed(1) + "m";
+        gameOverOverlay.classList.remove("hidden");
+      }
+
+      startBtn.addEventListener("click", startGame);
+      retryBtn.addEventListener("click", startGame);
+
+      // ポインター操作（スマホタッチ＆マウスドラッグ）
+      let dragging = false;
+      function setTargetFromClientX(clientX) {
+        const rect = canvas.getBoundingClientRect();
+        const x = clientX - rect.left;
+        const margin = paperWidth * 0.5 + 16;
+        targetX = Math.max(margin, Math.min(width - margin, x));
+      }
+
+      canvas.addEventListener("pointerdown", (e) => {
+        if (state !== "playing") return;
+        dragging = true;
+        setTargetFromClientX(e.clientX);
+      });
+      window.addEventListener("pointermove", (e) => {
+        if (!dragging || state !== "playing") return;
+        setTargetFromClientX(e.clientX);
+      });
+      window.addEventListener("pointerup", () => {
+        dragging = false;
+      });
+
+      // キーボード操作（PC用）
+      const keys = { left: false, right: false };
+      window.addEventListener("keydown", (e) => {
+        if (e.key === "ArrowLeft" || e.key === "a" || e.key === "A") keys.left = true;
+        if (e.key === "ArrowRight" || e.key === "d" || e.key === "D") keys.right = true;
+      });
+      window.addEventListener("keyup", (e) => {
+        if (e.key === "ArrowLeft" || e.key === "a" || e.key === "A") keys.left = false;
+        if (e.key === "ArrowRight" || e.key === "d" || e.key === "D") keys.right = false;
+      });
+
+      function spawnEntity() {
+        const margin = 36;
+        const x = margin + Math.random() * Math.max(40, width - margin * 2);
+        const r = Math.random();
+        if (r < 0.16) {
+          entities.push({ type: "star", x, y: -24, size: 28, vy: speed });
+        } else if (r < 0.32) {
+          entities.push({ type: "roll", x, y: -24, size: 28, vy: speed });
+        } else {
+          entities.push({ type: "spike", x, y: -24, size: 32, vy: speed });
+        }
+      }
+
+      function drawBackground() {
+        ctx.fillStyle = "#f8fafc";
+        ctx.fillRect(0, 0, width, height);
+
+        // 方眼グリッド
+        ctx.strokeStyle = "#e2e8f0";
+        ctx.lineWidth = 1;
+        const step = 28;
+        const offsetY = (distanceMeters * 60) % step;
+        for (let x = 0; x <= width; x += step) {
+          ctx.beginPath();
+          ctx.moveTo(x, 0);
+          ctx.lineTo(x, height);
+          ctx.stroke();
+        }
+        for (let y = offsetY; y <= height; y += step) {
+          ctx.beginPath();
+          ctx.moveTo(0, y);
+          ctx.lineTo(width, y);
+          ctx.stroke();
+        }
+      }
+
+      function drawPaper() {
+        const py = paperY();
+        const left = paperX - paperWidth / 2;
+
+        // 紙の帯（上から先端まで）
+        if (starTimer > 0) {
+          ctx.fillStyle = `hsl(${hue}, 90%, 62%)`;
+        } else {
+          ctx.fillStyle = "#ffffff";
+        }
+        ctx.fillRect(left, 0, paperWidth, py);
+
+        // 紙の輪郭とミシン目
+        ctx.strokeStyle = starTimer > 0 ? "#b45309" : "#94a3b8";
+        ctx.lineWidth = 2;
+        ctx.strokeRect(left, 0, paperWidth, py);
+
+        ctx.setLineDash([5, 5]);
+        ctx.strokeStyle = "#cbd5e1";
+        const perfStep = 48;
+        const perfOffset = (distanceMeters * 60) % perfStep;
+        for (let y = perfOffset; y < py; y += perfStep) {
+          ctx.beginPath();
+          ctx.moveTo(left + 4, y);
+          ctx.lineTo(left + paperWidth - 4, y);
+          ctx.stroke();
+        }
+        ctx.setLineDash([]);
+
+        // 先端のロール（芯）
+        ctx.beginPath();
+        ctx.ellipse(paperX, py, paperWidth / 2, 11, 0, 0, Math.PI * 2);
+        ctx.fillStyle = starTimer > 0 ? `hsl(${(hue + 180) % 360}, 95%, 55%)` : "#f1f5f9";
+        ctx.fill();
+        ctx.strokeStyle = "#475569";
+        ctx.lineWidth = 2;
+        ctx.stroke();
+
+        ctx.beginPath();
+        ctx.ellipse(paperX, py, 9, 4, 0, 0, Math.PI * 2);
+        ctx.fillStyle = "#cbd5e1";
+        ctx.fill();
+      }
+
+      function drawEntities() {
+        for (const ent of entities) {
+          if (ent.type === "spike") {
+            // トゲ障害物（赤三角）
+            ctx.fillStyle = "#ef4444";
+            ctx.beginPath();
+            ctx.moveTo(ent.x, ent.y - ent.size * 0.55);
+            ctx.lineTo(ent.x - ent.size * 0.5, ent.y + ent.size * 0.45);
+            ctx.lineTo(ent.x + ent.size * 0.5, ent.y + ent.size * 0.45);
+            ctx.closePath();
+            ctx.fill();
+            ctx.strokeStyle = "#991b1b";
+            ctx.lineWidth = 2;
+            ctx.stroke();
+          } else if (ent.type === "star") {
+            // 無敵スター
+            ctx.font = "26px sans-serif";
+            ctx.textAlign = "center";
+            ctx.textBaseline = "middle";
+            ctx.fillText("⭐", ent.x, ent.y);
+          } else if (ent.type === "roll") {
+            // 耐久回復ロール
+            ctx.font = "26px sans-serif";
+            ctx.textAlign = "center";
+            ctx.textBaseline = "middle";
+            ctx.fillText("🧻", ent.x, ent.y);
+          }
+        }
+      }
+
+      function loop(now) {
+        const dt = Math.min(0.05, (now - lastTime) / 1000);
+        lastTime = now;
+        hue = (hue + dt * 240) % 360;
+
+        if (state === "playing") {
+          if (keys.left) targetX -= 320 * dt;
+          if (keys.right) targetX += 320 * dt;
+          const margin = paperWidth * 0.5 + 16;
+          targetX = Math.max(margin, Math.min(width - margin, targetX));
+
+          prevPaperX = paperX;
+          paperX += (targetX - paperX) * Math.min(1, dt * 16);
+
+          // 急な横移動による耐久度減少
+          const moveSpeed = Math.abs(paperX - prevPaperX) / Math.max(dt, 0.001);
+          if (moveSpeed > 420 && starTimer <= 0) {
+            durability -= (moveSpeed - 420) * 0.035 * dt;
+          }
+
+          speed = Math.min(440, 210 + distanceMeters * 2.2);
+          distanceMeters += (speed * dt) / 55;
+
+          if (starTimer > 0) {
+            starTimer = Math.max(0, starTimer - dt);
+          }
+
+          spawnTimer -= dt;
+          if (spawnTimer <= 0) {
+            spawnEntity();
+            spawnTimer = Math.max(0.42, 0.95 - distanceMeters * 0.008);
+          }
+
+          const py = paperY();
+          const halfW = paperWidth * 0.45;
+          const nextEntities = [];
+
+          for (const ent of entities) {
+            ent.y += speed * dt;
+            const hitX = Math.abs(ent.x - paperX) < halfW + ent.size * 0.4;
+            const hitY = Math.abs(ent.y - py) < ent.size * 0.55 + 12;
+
+            if (hitX && hitY) {
+              if (ent.type === "star") {
+                starTimer = 5.0;
+                continue;
+              } else if (ent.type === "roll") {
+                durability = Math.min(100, durability + 25);
+                continue;
+              } else if (ent.type === "spike") {
+                if (starTimer > 0) {
+                  // 無敵中は吹き飛ばす
+                  continue;
+                } else {
+                  durability -= 35;
+                  continue;
+                }
+              }
+            }
+
+            if (ent.y < height + 50) {
+              nextEntities.push(ent);
+            }
+          }
+          entities = nextEntities;
+
+          updateHud();
+          if (durability <= 0) {
+            gameOver("紙がちぎれた！");
+          }
+        }
+
+        drawBackground();
+        drawPaper();
+        drawEntities();
+        requestAnimationFrame(loop);
+      }
+
+      requestAnimationFrame(loop);
+    })();
+  </script>
 </body>
 </html>
