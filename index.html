@@ -40,7 +40,6 @@ html,body{margin:0;width:100%;height:100%;overflow:hidden;touch-action:none;font
 <canvas id="gameCanvas"></canvas>
 
 <div id="hud" class="hidden absolute top-0 left-0 w-full p-3 pointer-events-none flex flex-col gap-2 z-10">
-
  <div class="flex items-start justify-between">
   <div class="bg-white/95 border-2 border-sky-300 rounded-2xl px-3.5 py-1.5 shadow-sm">
    <div class="text-[11px] font-bold text-sky-600 leading-none">のばした長さ</div>
@@ -83,7 +82,6 @@ html,body{margin:0;width:100%;height:100%;overflow:hidden;touch-action:none;font
  <div id="invincibleBadge" class="hidden self-center bg-gradient-to-r from-pink-500 via-purple-500 to-sky-500 text-white border-2 border-white rounded-full px-5 py-1.5 shadow-lg font-black text-sm">
   🌈 無敵モード！ <span id="invincibleTimeDisplay">7.0</span>秒
  </div>
-
 </div>
 
 <div id="touchHint" class="hidden absolute bottom-7 left-0 w-full flex justify-center pointer-events-none z-10">
@@ -95,7 +93,6 @@ html,body{margin:0;width:100%;height:100%;overflow:hidden;touch-action:none;font
 <!-- スタート画面 -->
 <div id="startScreen" class="absolute inset-0 bg-sky-900/35 backdrop-blur-[2px] flex flex-col items-center justify-center p-4 z-20 overflow-y-auto">
  <div class="bg-white rounded-3xl p-5 w-full max-w-sm shadow-xl border-4 border-sky-200 text-center my-auto">
-
   <div class="inline-block bg-sky-100 text-sky-700 text-[11px] font-extrabold px-3 py-0.5 rounded-full mb-1.5">
    ちぎれたら即終了！スリルアクション
   </div>
@@ -112,7 +109,7 @@ html,body{margin:0;width:100%;height:100%;overflow:hidden;touch-action:none;font
    <div>💚 回復ロールで耐久度を回復！</div>
    <div>🌟 <strong>無敵スター</strong>を取ると7秒間無敵！</div>
    <div>🎁 <strong>ミステリーボックス</strong>から特別な能力をゲット！</div>
-   <div>⏳時間スロー・🧲磁石・❤️復活・👥分身が登場！</div>
+   <div>⏳時間スロー・🧲磁石・❤️復活が登場！</div>
    <div>🎵 明るく弾むポップBGM付き！</div>
   </div>
 
@@ -133,7 +130,6 @@ html,body{margin:0;width:100%;height:100%;overflow:hidden;touch-action:none;font
 <!-- ゲームオーバー画面 -->
 <div id="gameOverScreen" class="hidden absolute inset-0 bg-slate-900/50 backdrop-blur-[2px] flex flex-col items-center justify-center p-4 z-20 overflow-y-auto">
  <div class="bg-white rounded-3xl p-5 w-full max-w-sm shadow-2xl border-4 border-rose-200 text-center my-auto">
-
   <div id="failReasonBadge" class="inline-block bg-rose-100 text-rose-600 text-[11px] font-extrabold px-3 py-0.5 rounded-full mb-1.5">
    ビリッ！紙がちぎれてしまった！
   </div>
@@ -680,17 +676,13 @@ let spawnTimer=.65;
 let tearPoint=null;
 let entryId=null;
 
-// 既存の無敵状態
 let invincibleTime=0;
 let invincibleSparkleTimer=0;
 let rainbowHue=0;
 
-// ミステリーボックスの効果
 let slowTime=0;
 let magnetTime=0;
-let cloneTime=0;
 let reviveAvailable=false;
-let cloneFlash=0;
 
 const paper={
  x:0,
@@ -774,9 +766,7 @@ function startGame(){
 
  slowTime=0;
  magnetTime=0;
- cloneTime=0;
  reviveAvailable=false;
- cloneFlash=0;
 
  entities=[];
  particles=[];
@@ -827,10 +817,18 @@ function tryRevive(x=paper.x,y=paper.y){
 
  reviveAvailable=false;
  durability=50;
- cloneFlash=.8;
+
+ // 復活直後の再衝突を防ぐため2.5秒間無敵にする
+ invincibleTime=2.5;
+ invincibleSparkleTimer=0;
+ rainbowHue=0;
+
+ $('invincibleBadge').classList.remove('hidden');
+ $('invincibleTimeDisplay').textContent='2.5';
 
  sound.playStar();
  floatText(x,y-55,'❤️ 復活！！','#f43f5e');
+ floatText(x,y-82,'🌈 2.5秒間 無敵！','#a855f7');
 
  for(let i=0;i<36;i++){
   const a=Math.PI*2*i/36;
@@ -842,7 +840,7 @@ function tryRevive(x=paper.x,y=paper.y){
    rot:Math.random()*6.28,
    vr:5,
    life:.7+Math.random()*.5,
-   color=['#fb7185','#fda4af','#facc15','#ffffff'][i%4]
+   color:['#fb7185','#fda4af','#facc15','#ffffff'][i%4]
   });
  }
 
@@ -857,7 +855,6 @@ function tryRevive(x=paper.x,y=paper.y){
 function gameOver(reason,x=paper.x,y=paper.y){
  if(state!=='PLAYING')return;
 
- // 復活権があればゲームオーバーを一度だけ回避
  if(tryRevive(x,y))return;
 
  state='GAMEOVER';
@@ -868,7 +865,6 @@ function gameOver(reason,x=paper.x,y=paper.y){
  invincibleTime=0;
  slowTime=0;
  magnetTime=0;
- cloneTime=0;
  $('invincibleBadge').classList.add('hidden');
 
  tearPoint={x,y};
@@ -1072,30 +1068,21 @@ function activateInvincible(){
 function activateMystery(){
  sound.playMystery();
 
- const effects=[
-  {name:'slow',weight:1},
-  {name:'magnet',weight:1},
-  {name:'revive',weight:1},
-  {name:'clone',weight:1}
- ];
-
+ // 効果は時間スロー・磁石・復活の3種類
+ const effects=['slow','magnet','revive'];
  const selected=effects[Math.floor(Math.random()*effects.length)];
 
- if(selected.name==='slow'){
+ if(selected==='slow'){
   slowTime=5;
   floatText(paper.x,paper.y-55,'⏳ 時間スロー！！','#2563eb');
  }
- else if(selected.name==='magnet'){
+ else if(selected==='magnet'){
   magnetTime=8;
   floatText(paper.x,paper.y-55,'🧲 アイテム磁石！！','#0d9488');
  }
- else if(selected.name==='revive'){
+ else if(selected==='revive'){
   reviveAvailable=true;
   floatText(paper.x,paper.y-55,'❤️ 一回復活をゲット！！','#e11d48');
- }
- else if(selected.name==='clone'){
-  cloneTime=5;
-  floatText(paper.x,paper.y-55,'👥 分身の術！！','#9333ea');
  }
 
  for(let i=0;i<42;i++){
@@ -1151,8 +1138,6 @@ function update(dt){
  // ミステリー効果のタイマー
  slowTime=Math.max(0,slowTime-dt);
  magnetTime=Math.max(0,magnetTime-dt);
- cloneTime=Math.max(0,cloneTime-dt);
- cloneFlash=Math.max(0,cloneFlash-dt);
 
  // 時間スロー中はゲーム内の時間をゆっくり進める
  const gameDt=dt*(slowTime>0?.5:1);
@@ -1357,24 +1342,7 @@ function update(dt){
     continue;
    }
 
-   // 分身が障害物を肩代わり
-   if(cloneTime>0&&invincibleTime<=0){
-    cloneTime=0;
-    cloneFlash=.65;
-    floatText(e.x,e.y-15,'分身が守ってくれた！','#9333ea');
-
-    for(let k=0;k<18;k++){
-     createSparkle(
-      e.x+(Math.random()-.5)*45,
-      e.y+(Math.random()-.5)*45,
-      ['#c084fc','#e9d5ff','#ffffff'][k%3]
-     );
-    }
-
-    entities.splice(i,1);
-    continue;
-   }
-
+   // 無敵中は障害物を突破
    if(invincibleTime>0){
     if(e.type==='puddle'){
      floatText(e.x,e.y,'水たまり突破！','#38bdf8');
@@ -1475,11 +1443,6 @@ function draw(){
   drawInvincibleAura();
  }
 
- // 分身の描画
- if(state==='PLAYING'&&cloneTime>0){
-  drawClone();
- }
-
  drawRoll();
 
  particles.forEach(p=>{
@@ -1505,62 +1468,6 @@ function draw(){
   ctx.fillText(f.text,f.x,f.y);
   ctx.restore();
  });
-}
-
-
-// ============================================================
-// 分身の描画
-// ============================================================
-function drawClone(){
- const t=performance.now()/1000;
- const offset=Math.sin(t*5)*5;
- const x=paper.x+55;
- const y=paper.y+offset;
-
- ctx.save();
- ctx.globalAlpha=.58;
- ctx.translate(x,y);
-
- ctx.shadowBlur=18;
- ctx.shadowColor='#a855f7';
-
- ctx.fillStyle='#e9d5ff';
- ctx.strokeStyle='#9333ea';
- ctx.lineWidth=3;
-
- ctx.beginPath();
- ctx.ellipse(0,0,19,25,0,0,Math.PI*2);
- ctx.fill();
- ctx.stroke();
-
- ctx.fillStyle='white';
- ctx.beginPath();
- ctx.ellipse(0,-2,11,15,0,0,Math.PI*2);
- ctx.fill();
-
- ctx.fillStyle='#7e22ce';
- ctx.beginPath();
- ctx.arc(-5,-5,2.2,0,Math.PI*2);
- ctx.arc(5,-5,2.2,0,Math.PI*2);
- ctx.fill();
-
- ctx.strokeStyle='#9333ea';
- ctx.lineWidth=2;
- ctx.beginPath();
- ctx.arc(0,3,5,.15,Math.PI-.15);
- ctx.stroke();
-
- ctx.restore();
-
- ctx.save();
- ctx.font='900 11px sans-serif';
- ctx.textAlign='center';
- ctx.fillStyle='#7e22ce';
- ctx.strokeStyle='white';
- ctx.lineWidth=3;
- ctx.strokeText('分身',x,y-34);
- ctx.fillText('分身',x,y-34);
- ctx.restore();
 }
 
 
@@ -2069,7 +1976,6 @@ function drawEntity(e){
   ctx.shadowBlur=24;
   ctx.shadowColor='#a855f7';
 
-  // 光の輪
   const glow=ctx.createRadialGradient(0,0,4,0,0,39);
   glow.addColorStop(0,'rgba(250,204,21,.5)');
   glow.addColorStop(1,'rgba(168,85,247,0)');
@@ -2079,7 +1985,6 @@ function drawEntity(e){
   ctx.arc(0,0,39,0,Math.PI*2);
   ctx.fill();
 
-  // 箱本体
   const boxGrad=ctx.createLinearGradient(-22,-20,22,22);
   boxGrad.addColorStop(0,'#d8b4fe');
   boxGrad.addColorStop(.5,'#9333ea');
@@ -2094,7 +1999,6 @@ function drawEntity(e){
   ctx.fill();
   ctx.stroke();
 
-  // フタ
   ctx.fillStyle='#c084fc';
   ctx.strokeStyle='#fef08a';
   ctx.lineWidth=2;
@@ -2104,7 +2008,6 @@ function drawEntity(e){
   ctx.fill();
   ctx.stroke();
 
-  // ?
   ctx.shadowBlur=0;
   ctx.font='900 27px sans-serif';
   ctx.textAlign='center';
@@ -2115,7 +2018,6 @@ function drawEntity(e){
   ctx.fillStyle='#fff7ae';
   ctx.fillText('?',0,1);
 
-  // 星の装飾
   ctx.fillStyle='white';
   [[-29,-27],[29,-22],[27,24],[-28,25]].forEach(([x,y])=>{
    ctx.beginPath();
