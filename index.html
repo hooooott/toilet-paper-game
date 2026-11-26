@@ -1,37 +1,68 @@
 
 <!DOCTYPE html>
+
 <html lang="ja">
+
 <head>
+
 <meta charset="UTF-8">
+
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+
 <meta name="apple-mobile-web-app-capable" content="yes">
+
 <title>トイレットペーパー・ロングラン！</title>
+
 <script src="https://cdn.tailwindcss.com"></script>
+
 <link rel="preconnect" href="https://fonts.googleapis.com">
+
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+
 <link href="https://fonts.googleapis.com/css2?family=M+PLUS+Rounded+1c:wght@500;700;800;900&display=swap" rel="stylesheet">
 
 <style>
+
 *{box-sizing:border-box;user-select:none;-webkit-user-select:none;-webkit-touch-callout:none}
+
 html,body{margin:0;width:100%;height:100%;overflow:hidden;touch-action:none;font-family:'M PLUS Rounded 1c',sans-serif;background:#e0f2fe}
+
 #gameCanvas{display:block;width:100%;height:100%;touch-action:none}
+
 .bathroom-bg{background-color:#f0f9ff;background-image:linear-gradient(to right,rgba(186,230,253,.55) 1px,transparent 1px),linear-gradient(to bottom,rgba(186,230,253,.55) 1px,transparent 1px);background-size:36px 36px}
+
 .btn-pop{transition:transform .1s,box-shadow .1s;box-shadow:0 5px 0 #0284c7}
+
 .btn-pop:active{transform:translateY(4px);box-shadow:0 1px 0 #0284c7}
+
 .btn-pop-green{transition:transform .1s,box-shadow .1s;box-shadow:0 5px 0 #15803d}
+
 .btn-pop-green:active{transform:translateY(4px);box-shadow:0 1px 0 #15803d}
+
 @keyframes pulse-fast{0%,100%{transform:scale(1)}50%{transform:scale(1.04)}}
+
 .danger-pulse{animation:pulse-fast .35s infinite}
+
 @keyframes banner-pop{0%{transform:scale(.82);opacity:0}70%{transform:scale(1.05);opacity:1}100%{transform:scale(1);opacity:1}}
+
 .record-banner-anim{animation:banner-pop .4s cubic-bezier(.22,1,.36,1) forwards}
+
 @keyframes rainbow-glow{
+
   0%,100%{filter:drop-shadow(0 0 5px #ff4545)}
+
   20%{filter:drop-shadow(0 0 8px #ffb52e)}
+
   40%{filter:drop-shadow(0 0 8px #fff44f)}
+
   60%{filter:drop-shadow(0 0 8px #45e77b)}
+
   80%{filter:drop-shadow(0 0 8px #55aaff)}
+
 }
+
 </style>
+
 </head>
 
 <body class="flex items-center justify-center bathroom-bg">
@@ -43,851 +74,1373 @@ html,body{margin:0;width:100%;height:100%;overflow:hidden;touch-action:none;font
 <div id="hud" class="hidden absolute top-0 left-0 w-full p-3 pointer-events-none flex flex-col gap-2 z-10">
 
  <div class="flex items-start justify-between">
+
   <div class="bg-white/95 border-2 border-sky-300 rounded-2xl px-3.5 py-1.5 shadow-sm">
+
    <div class="text-[11px] font-bold text-sky-600 leading-none">のばした長さ</div>
+
    <div class="text-2xl font-extrabold text-slate-800">
+
     <span id="distanceDisplay">0.0</span><span class="text-sm text-sky-600">m</span>
+
    </div>
+
   </div>
 
   <div class="flex items-center gap-2 pointer-events-auto">
+
    <div class="bg-amber-50/95 border-2 border-amber-300 rounded-2xl px-3 py-1.5 text-right shadow-sm">
+
     <div class="text-[10px] font-bold text-amber-600">1位記録</div>
+
     <div class="text-sm font-extrabold text-amber-800">
+
      <span id="hudBestDisplay">0.0</span>m
+
     </div>
+
    </div>
 
    <button id="soundToggleBtn" type="button" aria-label="音声切り替え" class="w-10 h-10 bg-white border-2 border-sky-300 rounded-full flex items-center justify-center text-sky-600 shadow-sm">
+
     <svg id="soundOnIcon" class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+
      <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/>
+
      <path d="M15.5 8.5a5 5 0 0 1 0 7"/>
+
     </svg>
+
     <svg id="soundOffIcon" class="w-5 h-5 hidden text-slate-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+
      <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/>
+
      <path d="m17 9 6 6m0-6-6 6"/>
+
     </svg>
+
    </button>
+
   </div>
+
  </div>
 
  <div id="tensionContainer" class="bg-white/95 border-2 border-sky-200 rounded-2xl px-3 py-1.5 shadow-sm">
+
   <div class="flex justify-between text-xs font-bold mb-1">
+
    <span>🧻 紙の耐久度（ちぎれ注意・急操作NG！）</span>
+
    <span id="tensionPercent" class="text-sky-600">100%</span>
+
   </div>
+
   <div class="w-full h-3 bg-slate-200 rounded-full overflow-hidden p-0.5">
+
    <div id="tensionBar" class="h-full w-full bg-gradient-to-r from-emerald-400 to-sky-400 rounded-full"></div>
+
   </div>
+
  </div>
 
  <div id="invincibleBadge" class="hidden self-center bg-gradient-to-r from-pink-500 via-purple-500 to-sky-500 text-white border-2 border-white rounded-full px-5 py-1.5 shadow-lg font-black text-sm">
+
   🌈 無敵モード！ <span id="invincibleTimeDisplay">7.0</span>秒
+
  </div>
 
 </div>
 
 <div id="touchHint" class="hidden absolute bottom-7 left-0 w-full flex justify-center pointer-events-none z-10">
+
  <div class="bg-slate-800/80 text-white text-xs font-bold px-4 py-2 rounded-full animate-bounce">
+
   👆 左右にやさしくスライドして紙を伸ばそう！
+
  </div>
+
 </div>
 
 <!-- スタート画面 -->
+
 <div id="startScreen" class="absolute inset-0 bg-sky-900/35 backdrop-blur-[2px] flex flex-col items-center justify-center p-4 z-20 overflow-y-auto">
+
  <div class="bg-white rounded-3xl p-5 w-full max-w-sm shadow-xl border-4 border-sky-200 text-center my-auto">
 
   <div class="inline-block bg-sky-100 text-sky-700 text-[11px] font-extrabold px-3 py-0.5 rounded-full mb-1.5">
+
    ちぎれたら即終了！スリルアクション
+
   </div>
 
   <h1 class="text-2xl font-black text-slate-800 leading-tight">
+
    トイレットペーパー<br><span class="text-sky-500">ロングラン！</span>
+
   </h1>
 
   <p class="text-[11px] text-slate-500 font-bold mb-3">どこまで切らずに伸ばせるかな？</p>
 
   <div class="bg-slate-50 rounded-2xl p-3 text-left text-[11px] text-slate-600 space-y-1.5 mb-3.5 border border-slate-200">
+
    <div>👆 <strong>左右にスライド</strong>して紙を誘導</div>
+
    <div>⚠️ <strong>水たまり・ハサミ・猫の手・扇風機</strong>をよけよう！</div>
+
    <div>💚 回復ロールで耐久度を回復！</div>
+
    <div>🌟 <strong>無敵スター</strong>を取ると7秒間無敵！</div>
+
    <div>🎁 <strong>ミステリーボックス</strong>から特別な能力をゲット！</div>
+
    <div>⏳時間スロー・🧲磁石・❤️復活・👥分身が登場！</div>
+
    <div>🎵 明るく弾むポップBGM付き！</div>
+
   </div>
 
   <div class="bg-amber-50/80 border-2 border-amber-200 rounded-2xl p-3 mb-4 text-left">
+
    <div class="flex items-center justify-between mb-2">
+
     <span class="text-xs font-extrabold text-amber-800">🏆 マイベスト TOP 5</span>
+
     <button data-reset-trigger class="text-[10px] font-bold text-slate-500 bg-white border rounded-lg px-2 py-0.5">リセット</button>
+
    </div>
+
    <div id="startRankingList" class="space-y-1 text-xs"></div>
+
   </div>
 
   <button id="startBtn" class="w-full py-3.5 bg-sky-500 text-white font-extrabold text-lg rounded-2xl btn-pop">
+
    🧻 ゲームスタート！
+
   </button>
+
  </div>
+
 </div>
 
 <!-- ゲームオーバー画面 -->
+
 <div id="gameOverScreen" class="hidden absolute inset-0 bg-slate-900/50 backdrop-blur-[2px] flex flex-col items-center justify-center p-4 z-20 overflow-y-auto">
+
  <div class="bg-white rounded-3xl p-5 w-full max-w-sm shadow-2xl border-4 border-rose-200 text-center my-auto">
 
   <div id="failReasonBadge" class="inline-block bg-rose-100 text-rose-600 text-[11px] font-extrabold px-3 py-0.5 rounded-full mb-1.5">
+
    ビリッ！紙がちぎれてしまった！
+
   </div>
 
   <h2 class="text-xl font-black text-slate-800 mb-2">記録発表</h2>
+
   <div id="recordBanner" class="hidden mb-2.5 py-1.5 px-3 rounded-2xl font-extrabold text-xs"></div>
 
   <div class="bg-sky-50 border-2 border-sky-200 rounded-2xl py-2.5 px-4 mb-2.5">
+
    <div class="text-[11px] font-bold text-sky-600">今回伸ばした長さ</div>
+
    <div class="text-3xl font-black text-slate-800">
+
     <span id="finalDistance">0.0</span><span class="text-base text-sky-600">m</span>
+
    </div>
+
    <p id="rankComment" class="text-[11px] font-bold text-slate-600 mt-1">称号：新人ペーパー職人</p>
+
   </div>
 
   <div class="bg-amber-50/80 border-2 border-amber-200 rounded-2xl p-3 mb-3.5 text-left">
+
    <div class="flex items-center justify-between mb-1.5">
+
     <span class="text-xs font-extrabold text-amber-800">🏆 マイベスト TOP 5</span>
+
     <button data-reset-trigger class="text-[10px] font-bold text-slate-500 bg-white border rounded-lg px-2 py-0.5">リセット</button>
+
    </div>
+
    <div id="gameOverRankingList" class="space-y-1 text-xs"></div>
+
   </div>
 
   <div class="flex flex-col gap-2">
+
    <button id="retryBtn" class="w-full py-3 bg-emerald-500 text-white font-extrabold text-base rounded-2xl btn-pop-green">
+
     🔄 もう一度挑戦する
+
    </button>
+
    <button id="shareBtn" class="w-full py-2 bg-sky-100 text-sky-700 font-extrabold text-xs rounded-2xl">
+
     📋 結果をコピーしてシェア
+
    </button>
+
   </div>
+
  </div>
+
 </div>
 
 <!-- ランキングリセット確認 -->
+
 <div id="resetConfirmModal" class="hidden absolute inset-0 bg-slate-900/60 flex items-center justify-center p-5 z-30">
+
  <div class="bg-white rounded-3xl p-5 w-full max-w-xs shadow-2xl border-2 border-rose-200 text-center">
+
   <div class="text-2xl mb-1">🗑️</div>
+
   <h3 class="text-base font-extrabold text-slate-800 mb-1">ランキングをリセットしますか？</h3>
+
   <p class="text-xs text-slate-500 font-bold mb-4">保存されているTOP 5の記録がすべて消去されます。</p>
+
   <div class="flex gap-2.5">
+
    <button id="cancelResetBtn" class="flex-1 py-2.5 bg-slate-100 text-slate-700 font-extrabold text-xs rounded-xl">キャンセル</button>
+
    <button id="confirmResetBtn" class="flex-1 py-2.5 bg-rose-500 text-white font-extrabold text-xs rounded-xl">リセットする</button>
+
   </div>
+
  </div>
+
 </div>
 
 <div id="toastMsg" class="hidden absolute bottom-6 left-1/2 -translate-x-1/2 bg-slate-800/90 text-white text-xs font-bold px-4 py-2.5 rounded-full shadow-lg z-40 whitespace-nowrap">
+
  コピーしました！
+
 </div>
 
 </div>
 
 <script>
+
 'use strict';
 
 // ============================================================
+
 // サウンド
+
 // ============================================================
+
 class SoundFX {
+
  constructor(){
+
   this.ctx=null;
+
   this.muted=false;
+
   this.lastRollTick=0;
+
   this.bgmTimer=null;
+
   this.bgmPlaying=false;
+
   this.bgmStep=0;
+
   this.bgmNextTime=0;
+
   this.bgmWasPlaying=false;
+
  }
 
  init(){
+
   try{
+
    if(!this.ctx){
+
     const AC=window.AudioContext||window.webkitAudioContext;
+
     if(AC)this.ctx=new AC();
+
    }
+
    if(this.ctx&&this.ctx.state==='suspended')this.ctx.resume();
+
   }catch(e){console.warn('Audio init:',e);}
+
  }
 
  toggleMute(){
+
   this.muted=!this.muted;
+
   if(this.muted){
+
    this.bgmWasPlaying=this.bgmPlaying;
+
    this.stopBGM();
+
   }else if(this.bgmWasPlaying){
+
    this.startBGM();
+
   }
+
   return this.muted;
+
  }
 
  startBGM(){
+
   if(this.muted||!this.ctx||this.bgmPlaying)return;
 
   this.bgmPlaying=true;
+
   this.bgmWasPlaying=true;
+
   this.bgmStep=0;
+
   this.bgmNextTime=this.ctx.currentTime+.06;
 
   this.bgmTimer=setInterval(()=>{
+
    if(!this.bgmPlaying||this.muted||!this.ctx)return;
+
    const now=this.ctx.currentTime;
 
    while(this.bgmNextTime<now+.22){
+
     this.schedulePopBeat(this.bgmNextTime,this.bgmStep);
+
     this.bgmNextTime+=.25;
+
     this.bgmStep=(this.bgmStep+1)%32;
+
    }
+
   },50);
+
  }
 
  stopBGM(clearIntent=false){
+
   this.bgmPlaying=false;
+
   if(this.bgmTimer){
+
    clearInterval(this.bgmTimer);
+
    this.bgmTimer=null;
+
   }
+
   if(clearIntent)this.bgmWasPlaying=false;
+
  }
 
  schedulePopBeat(t,step){
+
   const chords=[
+
    [261.63,329.63,392],
+
    [220,261.63,329.63],
+
    [174.61,220,261.63],
+
    [196,246.94,293.66]
+
   ];
 
   const melody=[
+
    523.25,659.25,783.99,659.25,
+
    587.33,659.25,783.99,1046.5,
+
    783.99,659.25,587.33,523.25,
+
    659.25,783.99,880,783.99
+
   ];
 
   const ci=Math.floor(step/8)%4;
 
   if(step%8===0){
+
    chords[ci].forEach(f=>this.note(f,t,.43,.012,'sine'));
+
   }
 
   if(step%2===0){
+
    const bass=[130.81,110,87.31,98][ci];
+
    this.note(bass,t,.18,.052,'triangle');
+
    const f=melody[(Math.floor(step/2)+ci*3)%melody.length];
+
    this.note(f,t,.19,.028,'triangle');
+
   }
 
   if(step%8===6)this.note(1046.5,t,.14,.012,'sine');
+
   if(step%4===0)this.kick(t,.032);
+
   else if(step%4===2)this.kick(t,.016);
+
   if(step%8===4)this.noiseHat(t,.009);
+
  }
 
  note(freq,t,dur,vol,type){
+
   if(!this.ctx)return;
+
   const o=this.ctx.createOscillator();
+
   const g=this.ctx.createGain();
 
   o.type=type;
+
   o.frequency.setValueAtTime(freq,t);
+
   g.gain.setValueAtTime(.0001,t);
+
   g.gain.linearRampToValueAtTime(vol,t+.014);
+
   g.gain.exponentialRampToValueAtTime(.0001,t+dur);
 
   o.connect(g);
+
   g.connect(this.ctx.destination);
+
   o.start(t);
+
   o.stop(t+dur+.02);
+
  }
 
  kick(t,vol){
+
   if(!this.ctx)return;
+
   const o=this.ctx.createOscillator();
+
   const g=this.ctx.createGain();
 
   o.type='sine';
+
   o.frequency.setValueAtTime(145,t);
+
   o.frequency.exponentialRampToValueAtTime(48,t+.095);
+
   g.gain.setValueAtTime(vol,t);
+
   g.gain.exponentialRampToValueAtTime(.0001,t+.1);
 
   o.connect(g);
+
   g.connect(this.ctx.destination);
+
   o.start(t);
+
   o.stop(t+.11);
+
  }
 
  noiseHat(t,vol){
+
   if(!this.ctx)return;
+
   const n=Math.floor(this.ctx.sampleRate*.045);
+
   const b=this.ctx.createBuffer(1,n,this.ctx.sampleRate);
+
   const d=b.getChannelData(0);
 
   for(let i=0;i<n;i++)d[i]=(Math.random()*2-1);
 
   const s=this.ctx.createBufferSource();
+
   const f=this.ctx.createBiquadFilter();
+
   const g=this.ctx.createGain();
 
   s.buffer=b;
+
   f.type='highpass';
+
   f.frequency.value=6500;
+
   g.gain.setValueAtTime(vol,t);
+
   g.gain.exponentialRampToValueAtTime(.0001,t+.045);
 
   s.connect(f);
+
   f.connect(g);
+
   g.connect(this.ctx.destination);
+
   s.start(t);
+
  }
 
  playRollTick(speedRatio){
+
   if(this.muted||!this.ctx)return;
 
   const now=this.ctx.currentTime;
+
   const interval=Math.max(.06,.14-speedRatio*.05);
+
   if(now-this.lastRollTick<interval)return;
 
   this.lastRollTick=now;
 
   const o=this.ctx.createOscillator();
+
   const g=this.ctx.createGain();
 
   o.type='triangle';
+
   o.frequency.setValueAtTime(220+Math.random()*55,now);
+
   o.frequency.exponentialRampToValueAtTime(95,now+.032);
+
   g.gain.setValueAtTime(.025,now);
+
   g.gain.exponentialRampToValueAtTime(.001,now+.032);
 
   o.connect(g);
+
   g.connect(this.ctx.destination);
+
   o.start(now);
+
   o.stop(now+.038);
+
  }
 
  playItem(gold=false){
+
   if(this.muted||!this.ctx)return;
 
   const now=this.ctx.currentTime;
+
   const fs=gold?[587.33,880,1174.66]:[523.25,783.99];
 
   fs.forEach((f,i)=>{
+
    const t=now+i*.06;
+
    const o=this.ctx.createOscillator();
+
    const g=this.ctx.createGain();
 
    o.type='sine';
+
    o.frequency.setValueAtTime(f,t);
+
    g.gain.setValueAtTime(.11,t);
+
    g.gain.exponentialRampToValueAtTime(.001,t+.22);
 
    o.connect(g);
+
    g.connect(this.ctx.destination);
+
    o.start(t);
+
    o.stop(t+.24);
+
   });
+
  }
 
  playStar(){
+
   if(this.muted||!this.ctx)return;
 
   const now=this.ctx.currentTime;
+
   const notes=[523.25,659.25,783.99,1046.5,1318.51,1567.98];
 
   notes.forEach((f,i)=>{
+
    const t=now+i*.075;
+
    const o=this.ctx.createOscillator();
+
    const g=this.ctx.createGain();
 
    o.type='sine';
+
    o.frequency.setValueAtTime(f,t);
+
    g.gain.setValueAtTime(.001,t);
+
    g.gain.linearRampToValueAtTime(.13,t+.025);
+
    g.gain.exponentialRampToValueAtTime(.001,t+.32);
 
    o.connect(g);
+
    g.connect(this.ctx.destination);
+
    o.start(t);
+
    o.stop(t+.34);
+
   });
+
  }
 
  playMystery(){
+
   if(this.muted||!this.ctx)return;
+
   const now=this.ctx.currentTime;
+
   [392,523.25,659.25,783.99,1046.5].forEach((f,i)=>{
+
    const t=now+i*.065;
+
    const o=this.ctx.createOscillator();
+
    const g=this.ctx.createGain();
+
    o.type='sine';
+
    o.frequency.setValueAtTime(f,t);
+
    g.gain.setValueAtTime(.001,t);
+
    g.gain.linearRampToValueAtTime(.13,t+.025);
+
    g.gain.exponentialRampToValueAtTime(.001,t+.3);
+
    o.connect(g);
+
    g.connect(this.ctx.destination);
+
    o.start(t);
+
    o.stop(t+.32);
+
   });
+
  }
 
  playWarning(){
+
   if(this.muted||!this.ctx)return;
 
   const t=this.ctx.currentTime;
+
   const o=this.ctx.createOscillator();
+
   const g=this.ctx.createGain();
 
   o.type='sawtooth';
+
   o.frequency.setValueAtTime(460,t);
+
   o.frequency.setValueAtTime(540,t+.045);
+
   g.gain.setValueAtTime(.035,t);
+
   g.gain.exponentialRampToValueAtTime(.001,t+.095);
 
   o.connect(g);
+
   g.connect(this.ctx.destination);
+
   o.start(t);
+
   o.stop(t+.1);
+
  }
 
  playTear(){
+
   if(this.muted||!this.ctx)return;
 
   const t=this.ctx.currentTime;
+
   const n=Math.floor(this.ctx.sampleRate*.35);
+
   const b=this.ctx.createBuffer(1,n,this.ctx.sampleRate);
+
   const d=b.getChannelData(0);
 
   for(let i=0;i<n;i++){
+
    d[i]=(Math.random()*2-1)*Math.exp(-i/(n*.35));
+
   }
 
   const s=this.ctx.createBufferSource();
+
   const f=this.ctx.createBiquadFilter();
+
   const g=this.ctx.createGain();
 
   s.buffer=b;
+
   f.type='bandpass';
+
   f.frequency.setValueAtTime(1400,t);
+
   f.frequency.exponentialRampToValueAtTime(300,t+.35);
+
   g.gain.setValueAtTime(.32,t);
+
   g.gain.exponentialRampToValueAtTime(.01,t+.35);
 
   s.connect(f);
+
   f.connect(g);
+
   g.connect(this.ctx.destination);
+
   s.start(t);
+
  }
 
  playFanfare(first=true){
+
   if(this.muted||!this.ctx)return;
 
   const t=this.ctx.currentTime+.18;
+
   const ns=first
+
    ?[[523.25,0,.12],[659.25,.11,.12],[783.99,.22,.12],[1046.5,.34,.38],[880,.56,.12],[1046.5,.7,.45]]
+
    :[[523.25,0,.12],[659.25,.12,.12],[783.99,.24,.28]];
 
   ns.forEach(([f,dt,d])=>{
+
    const o=this.ctx.createOscillator();
+
    const g=this.ctx.createGain();
 
    o.type='triangle';
+
    o.frequency.setValueAtTime(f,t+dt);
+
    g.gain.setValueAtTime(.001,t+dt);
+
    g.gain.linearRampToValueAtTime(.15,t+dt+.02);
+
    g.gain.exponentialRampToValueAtTime(.001,t+dt+d);
 
    o.connect(g);
+
    g.connect(this.ctx.destination);
+
    o.start(t+dt);
+
    o.stop(t+dt+d+.02);
+
   });
+
  }
+
 }
 
 const sound=new SoundFX();
 
+// ============================================================
+
+// ランキング
 
 // ============================================================
-// ランキング
-// ============================================================
+
 const RANKING_KEY='tp_longrun_ranking_top5_v1';
+
 const LEGACY_KEY='tp_longrun_best_v1';
 
 let rankingList=[];
 
 function dateStamp(){
+
  const d=new Date();
+
  return `${String(d.getMonth()+1).padStart(2,'0')}/${String(d.getDate()).padStart(2,'0')} ${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`;
+
 }
 
 function loadRanking(){
+
  try{
+
   const raw=localStorage.getItem(RANKING_KEY);
 
   if(raw){
+
    const a=JSON.parse(raw);
+
    if(Array.isArray(a)){
+
     return a.filter(x=>Number.isFinite(x.distance))
+
      .map(x=>({
+
       distance:Math.round(x.distance*10)/10,
+
       dateStr:x.dateStr||'--/-- --:--',
+
       id:x.id||String(Math.random())
+
      }))
+
      .sort((a,b)=>b.distance-a.distance)
+
      .slice(0,5);
+
    }
+
   }
 
   const old=parseFloat(localStorage.getItem(LEGACY_KEY)||'0');
 
   if(old>0){
+
    const a=[{
+
     distance:Math.round(old*10)/10,
+
     dateStr:dateStamp(),
+
     id:'legacy-best'
+
    }];
+
    saveRanking(a);
+
    return a;
+
   }
+
  }catch(e){
+
   console.warn('ranking load:',e);
+
  }
 
  return [];
+
 }
 
 function saveRanking(list=rankingList){
+
  try{
+
   localStorage.setItem(RANKING_KEY,JSON.stringify(list.slice(0,5)));
+
  }catch(e){
+
   console.warn('ranking save:',e);
+
  }
+
 }
 
 function renderRankings(highlight=null){
+
  const medals=['🥇','🥈','🥉','4.','5.'];
 
  ['startRankingList','gameOverRankingList'].forEach(id=>{
+
   const el=document.getElementById(id);
+
   if(!el)return;
 
   el.innerHTML='';
 
   if(!rankingList.length){
+
    const p=document.createElement('div');
+
    p.className='text-center py-3 text-slate-400 font-bold text-[11px]';
+
    p.textContent='まだ記録がありません。最初の1位を目指そう！';
+
    el.appendChild(p);
+
    return;
+
   }
 
   for(let i=0;i<5;i++){
+
    const x=rankingList[i];
+
    const row=document.createElement('div');
 
    row.className='flex items-center justify-between px-2.5 py-1 rounded-xl '+
+
     (x?(x.id===highlight?'bg-amber-200 border border-amber-400':'bg-white/85 text-slate-700 font-bold'):'bg-white/40 text-slate-400');
 
    const l=document.createElement('span');
+
    l.textContent=`${medals[i]} ${x?x.distance.toFixed(1)+'m':'---'}`;
 
    const r=document.createElement('span');
+
    r.className='text-[10px] text-slate-400 tabular-nums';
+
    r.textContent=x?x.dateStr:'';
 
    row.append(l,r);
+
    el.appendChild(row);
+
   }
+
  });
+
 }
 
 function topScore(){
+
  return rankingList.length?rankingList[0].distance:0;
+
 }
 
 function updateBest(){
+
  document.getElementById('hudBestDisplay').textContent=topScore().toFixed(1);
+
 }
 
 function registerScore(value){
+
  const v=Math.round(value*10)/10;
+
  if(v<=0)return{rank:null,first:false,id:null};
 
  const old=topScore();
+
  const id=`${Date.now()}-${Math.random().toString(36).slice(2,6)}`;
 
  rankingList=[
+
   ...rankingList,
+
   {distance:v,dateStr:dateStamp(),id}
+
  ].sort((a,b)=>b.distance-a.distance).slice(0,5);
 
  const ix=rankingList.findIndex(x=>x.id===id);
 
  saveRanking();
+
  renderRankings(id);
+
  updateBest();
 
  return{
+
   rank:ix<0?null:ix+1,
+
   first:ix===0&&v>old,
+
   id
+
  };
+
 }
 
 function clearRanking(){
+
  rankingList=[];
 
  try{
+
   localStorage.removeItem(RANKING_KEY);
+
   localStorage.removeItem(LEGACY_KEY);
+
  }catch(e){}
 
  renderRankings();
+
  updateBest();
+
 }
 
+// ============================================================
+
+// ゲームの基本状態
 
 // ============================================================
-// ゲームの基本状態
-// ============================================================
+
 const $=id=>document.getElementById(id);
+
 const canvas=$('gameCanvas');
+
 const ctx=canvas.getContext('2d');
+
 const wrapper=$('game-wrapper');
 
 const hud=$('hud');
+
 const startScreen=$('startScreen');
+
 const gameOverScreen=$('gameOverScreen');
+
 const touchHint=$('touchHint');
 
 let W=0,H=0,DPR=1;
+
 let state='START';
+
 let distance=0;
+
 let speed=230;
+
 let durability=100;
+
 let rollAngle=0;
+
 let rollRadius=38;
+
 let lastWarning=0;
+
 let lastTime=0;
+
 let spawnTimer=.65;
+
 let tearPoint=null;
+
 let entryId=null;
 
 // 既存の無敵状態
+
 let invincibleTime=0;
+
 let invincibleSparkleTimer=0;
+
 let rainbowHue=0;
 
 // ミステリーボックスの効果
+
 let slowTime=0;
+
 let magnetTime=0;
+
 let cloneTime=0;
+
 let reviveAvailable=false;
+
 let cloneFlash=0;
 
 const paper={
+
  x:0,
+
  y:0,
+
  targetX:0,
+
  vx:0,
+
  width:34,
+
  trail:[]
+
 };
 
 const input={
+
  down:false,
+
  lastX:0,
+
  left:false,
+
  right:false
+
 };
 
 let entities=[];
+
 let particles=[];
+
 let floating=[];
 
 rankingList=loadRanking();
 
 function rollY(){
+
  return Math.max(115,H*.16);
+
 }
 
 function initTrail(){
+
  paper.trail=[];
 
  const sy=rollY()+18;
 
  for(let i=0;i<=28;i++){
+
   const t=i/28;
 
   paper.trail.push({
+
    x:paper.x,
+
    y:sy+(paper.y-sy)*t
+
   });
+
  }
+
 }
 
 function resize(){
+
  const r=wrapper.getBoundingClientRect();
 
  DPR=Math.min(devicePixelRatio||1,2);
+
  W=Math.max(280,r.width);
+
  H=Math.max(400,r.height);
 
  canvas.width=Math.floor(W*DPR);
+
  canvas.height=Math.floor(H*DPR);
 
  ctx.setTransform(DPR,0,0,DPR,0,0);
 
  if(state==='START'){
+
   paper.x=paper.targetX=W/2;
+
   paper.y=H*.44;
+
   initTrail();
+
  }
+
 }
 
+// ============================================================
+
+// ゲーム開始
 
 // ============================================================
-// ゲーム開始
-// ============================================================
+
 function startGame(){
+
  sound.init();
+
  sound.stopBGM(true);
+
  sound.startBGM();
 
  state='PLAYING';
 
  distance=0;
+
  speed=230;
+
  durability=100;
+
  rollRadius=38;
 
  invincibleTime=0;
+
  invincibleSparkleTimer=0;
+
  rainbowHue=0;
 
  slowTime=0;
+
  magnetTime=0;
+
  cloneTime=0;
+
  reviveAvailable=false;
+
  cloneFlash=0;
 
  entities=[];
+
  particles=[];
+
  floating=[];
 
  tearPoint=null;
+
  entryId=null;
+
  spawnTimer=.65;
+
  lastWarning=0;
 
  paper.x=paper.targetX=W/2;
+
  paper.vx=0;
+
  paper.y=H*.45;
 
  initTrail();
 
  startScreen.classList.add('hidden');
+
  gameOverScreen.classList.add('hidden');
+
  $('resetConfirmModal').classList.add('hidden');
 
  hud.classList.remove('hidden');
+
  touchHint.classList.remove('hidden');
 
  $('invincibleBadge').classList.add('hidden');
 
  updateHUD();
+
 }
 
-
 // ============================================================
+
 // 称号
+
 // ============================================================
+
 function rankTitle(m){
+
  if(m<10)return'称号：もったいない精神の見習い';
+
  if(m<25)return'称号：一般家庭のロール使い';
+
  if(m<50)return'称号：繊細な指先のペーパー職人';
+
  if(m<80)return'称号：トイレの魔術師';
+
  if(m<120)return'称号：伝説のロングロールマスター';
+
  return'称号：神に選ばれし無限ペーパー神';
+
 }
 
+// ============================================================
+
+// 復活処理
 
 // ============================================================
-// 復活処理
-// ============================================================
+
 function tryRevive(x=paper.x,y=paper.y){
+
  if(!reviveAvailable)return false;
 
  reviveAvailable=false;
+
  durability=50;
+
  cloneFlash=.8;
 
  sound.playStar();
+
  floatText(x,y-55,'❤️ 復活！！','#f43f5e');
 
  for(let i=0;i<36;i++){
+
   const a=Math.PI*2*i/36;
+
   particles.push({
+
    x,y,
+
    vx:Math.cos(a)*(90+Math.random()*100),
+
    vy:Math.sin(a)*(90+Math.random()*100),
+
    size:4+Math.random()*6,
+
    rot:Math.random()*6.28,
+
    vr:5,
+
    life:.7+Math.random()*.5,
+
    color=['#fb7185','#fda4af','#facc15','#ffffff'][i%4]
+
   });
+
  }
 
  updateHUD();
+
  return true;
+
 }
 
+// ============================================================
+
+// ゲームオーバー
 
 // ============================================================
-// ゲームオーバー
-// ============================================================
+
 function gameOver(reason,x=paper.x,y=paper.y){
+
  if(state!=='PLAYING')return;
 
  // 復活権があればゲームオーバーを一度だけ回避
+
  if(tryRevive(x,y))return;
 
  state='GAMEOVER';
 
  sound.stopBGM(true);
+
  sound.playTear();
 
  invincibleTime=0;
+
  slowTime=0;
+
  magnetTime=0;
+
  cloneTime=0;
+
  $('invincibleBadge').classList.add('hidden');
 
  tearPoint={x,y};
 
  for(let i=0;i<24;i++){
+
   particles.push({
+
    x:x+(Math.random()-.5)*30,
+
    y:y+(Math.random()-.5)*20,
+
    vx:(Math.random()-.5)*260,
+
    vy:-60-Math.random()*180,
+
    size:6+Math.random()*8,
+
    rot:Math.random()*6.28,
+
    vr:(Math.random()-.5)*10,
+
    life:1.2+Math.random()*.6
+
   });
+
  }
 
  const rounded=Math.round(distance*10)/10;
+
  const result=registerScore(rounded);
 
  entryId=result.id;
@@ -897,19 +1450,31 @@ function gameOver(reason,x=paper.x,y=paper.y){
  banner.classList.remove('hidden','record-banner-anim');
 
  if(result.first){
+
   banner.className='mb-2.5 py-1.5 px-3 rounded-2xl font-black text-xs bg-gradient-to-r from-amber-300 via-yellow-200 to-amber-300 text-amber-900 border-2 border-amber-400 record-banner-anim';
+
   banner.textContent='🎉 NEW RECORD! 歴代1位を更新しました！';
+
   sound.playFanfare(true);
+
  }else if(result.rank!==null){
+
   banner.className='mb-2.5 py-1.5 px-3 rounded-2xl font-extrabold text-xs bg-sky-100 text-sky-800 border-2 border-sky-300 record-banner-anim';
+
   banner.textContent=`⭐ TOP 5 ランクイン！（第${result.rank}位）`;
+
   sound.playFanfare(false);
+
  }else{
+
   banner.classList.add('hidden');
+
  }
 
  $('failReasonBadge').textContent=reason;
+
  $('finalDistance').textContent=rounded.toFixed(1);
+
  $('rankComment').textContent=rankTitle(rounded);
 
  renderRankings(entryId);
@@ -917,128 +1482,227 @@ function gameOver(reason,x=paper.x,y=paper.y){
  touchHint.classList.add('hidden');
 
  setTimeout(()=>{
+
   if(state==='GAMEOVER')gameOverScreen.classList.remove('hidden');
+
  },520);
+
 }
 
+// ============================================================
+
+// アイテム・障害物の出現
 
 // ============================================================
-// アイテム・障害物の出現
-// ============================================================
+
 function spawnEntity(){
+
  const margin=42;
+
  const x=margin+Math.random()*(W-margin*2);
+
  const y=H+50;
+
  const r=Math.random();
 
  if(r<.30){
+
   entities.push({
+
    type:'puddle',x,y,
+
    radius:26+Math.random()*10,
+
    wobble:Math.random()*6.28
+
   });
+
  }
+
  else if(r<.56){
+
   const moving=distance>18&&Math.random()<.45;
 
   entities.push({
+
    type:'scissors',x,y,
+
    radius:22,
+
    vx:moving?(Math.random()<.5?75:-75):0,
+
    phase:Math.random()*6.28
+
   });
+
  }
+
  else if(r<.75){
+
   const left=Math.random()<.5;
 
   entities.push({
+
    type:'catpaw',
+
    x:left?-30:W+30,
+
    y,
+
    left,
+
    reach:W*(.34+Math.random()*.14),
+
    phase:Math.random()*6.28,
+
    radius:22
+
   });
+
  }
+
  else if(r<.86){
+
   const right=x<W/2;
 
   entities.push({
+
    type:'fan',
+
    x:right?34:W-34,
+
    y,
+
    right,
+
    radius:26,
+
    angle:0
+
   });
+
  }
+
  else if(r<.92){
+
   entities.push({
+
    type:'repair',x,y,
+
    radius:20,
+
    bob:0
+
   });
+
  }
+
  else if(r<.97){
+
   entities.push({
+
    type:'gold',x,y,
+
    radius:21,
+
    bob:0
+
   });
+
  }
+
  else if(r<.985){
+
   entities.push({
+
    type:'star',x,y,
+
    radius:24,
+
    bob:Math.random()*6.28,
+
    rotation:0
+
   });
+
  }
+
  else{
+
   // ミステリーボックス：約1.5%で出現
+
   entities.push({
+
    type:'mystery',x,y,
+
    radius:25,
+
    bob:Math.random()*6.28,
+
    rotation:0
+
   });
+
  }
+
 }
 
+// ============================================================
+
+// エフェクト
 
 // ============================================================
-// エフェクト
-// ============================================================
+
 function floatText(x,y,text,color){
+
  floating.push({x,y,text,color,life:1});
+
 }
 
 function createSparkle(x,y,color){
+
  particles.push({
+
   x:x+(Math.random()-.5)*40,
+
   y:y+(Math.random()-.5)*40,
+
   vx:(Math.random()-.5)*55,
+
   vy:-20-Math.random()*60,
+
   size:3+Math.random()*5,
+
   rot:Math.random()*6.28,
+
   vr:(Math.random()-.5)*5,
+
   life:.35+Math.random()*.5,
+
   color
+
  });
+
 }
 
 function rainbowColor(offset=0){
+
  return `hsl(${(rainbowHue+offset)%360},100%,62%)`;
+
 }
 
+// ============================================================
+
+// 無敵状態の開始
 
 // ============================================================
-// 無敵状態の開始
-// ============================================================
+
 function activateInvincible(){
+
  invincibleTime=7;
+
  invincibleSparkleTimer=0;
+
  rainbowHue=0;
 
  sound.playStar();
@@ -1046,149 +1710,241 @@ function activateInvincible(){
  floatText(paper.x,paper.y-45,'🌈 7秒間 無敵！！','#e879f9');
 
  for(let i=0;i<32;i++){
+
   const a=Math.PI*2*i/32;
+
   const c=`hsl(${i*11},100%,65%)`;
 
   particles.push({
+
    x:paper.x,
+
    y:paper.y,
+
    vx:Math.cos(a)*(80+Math.random()*100),
+
    vy:Math.sin(a)*(80+Math.random()*100),
+
    size:4+Math.random()*6,
+
    rot:Math.random()*6.28,
+
    vr:5,
+
    life:.8+Math.random()*.5,
+
    color:c
+
   });
+
  }
 
  $('invincibleBadge').classList.remove('hidden');
+
  $('invincibleTimeDisplay').textContent='7.0';
+
 }
 
+// ============================================================
+
+// ミステリーボックスの効果
 
 // ============================================================
-// ミステリーボックスの効果
-// ============================================================
+
 function activateMystery(){
+
  sound.playMystery();
 
  const effects=[
+
   {name:'slow',weight:1},
+
   {name:'magnet',weight:1},
+
   {name:'revive',weight:1},
+
   {name:'clone',weight:1}
+
  ];
 
  const selected=effects[Math.floor(Math.random()*effects.length)];
 
  if(selected.name==='slow'){
+
   slowTime=5;
+
   floatText(paper.x,paper.y-55,'⏳ 時間スロー！！','#2563eb');
+
  }
+
  else if(selected.name==='magnet'){
+
   magnetTime=8;
+
   floatText(paper.x,paper.y-55,'🧲 アイテム磁石！！','#0d9488');
+
  }
+
  else if(selected.name==='revive'){
+
   reviveAvailable=true;
+
   floatText(paper.x,paper.y-55,'❤️ 一回復活をゲット！！','#e11d48');
+
  }
+
  else if(selected.name==='clone'){
+
   cloneTime=5;
+
   floatText(paper.x,paper.y-55,'👥 分身の術！！','#9333ea');
+
  }
 
  for(let i=0;i<42;i++){
+
   const a=Math.PI*2*i/42;
+
   const colors=['#a855f7','#facc15','#38bdf8','#fb7185','#ffffff'];
 
   particles.push({
+
    x:paper.x,
+
    y:paper.y,
+
    vx:Math.cos(a)*(80+Math.random()*150),
+
    vy:Math.sin(a)*(80+Math.random()*150),
+
    size:4+Math.random()*7,
+
    rot:Math.random()*6.28,
+
    vr:5,
+
    life:.7+Math.random()*.7,
+
    color:colors[i%colors.length]
+
   });
+
  }
+
 }
 
+// ============================================================
+
+// ゲーム更新
 
 // ============================================================
-// ゲーム更新
-// ============================================================
+
 function update(dt){
 
  // パーティクル更新
+
  for(let i=particles.length-1;i>=0;i--){
+
   const p=particles[i];
 
   p.x+=p.vx*dt;
+
   p.y+=p.vy*dt;
+
   p.vy+=420*dt;
+
   p.rot+=p.vr*dt;
+
   p.life-=dt;
 
   if(p.life<=0)particles.splice(i,1);
+
  }
 
  // 浮かぶ文字
+
  for(let i=floating.length-1;i>=0;i--){
+
   floating[i].y-=45*dt;
+
   floating[i].life-=dt;
 
   if(floating[i].life<=0)floating.splice(i,1);
+
  }
 
  if(state!=='PLAYING'){
+
   if(state==='START')rollAngle+=1.2*dt;
+
   return;
+
  }
 
  // ミステリー効果のタイマー
+
  slowTime=Math.max(0,slowTime-dt);
+
  magnetTime=Math.max(0,magnetTime-dt);
+
  cloneTime=Math.max(0,cloneTime-dt);
+
  cloneFlash=Math.max(0,cloneFlash-dt);
 
  // 時間スロー中はゲーム内の時間をゆっくり進める
+
  const gameDt=dt*(slowTime>0?.5:1);
 
  // 無敵タイマー
+
  if(invincibleTime>0){
+
   invincibleTime=Math.max(0,invincibleTime-dt);
+
   rainbowHue=(rainbowHue+180*dt)%360;
+
   invincibleSparkleTimer-=dt;
 
   if(invincibleSparkleTimer<=0){
+
    invincibleSparkleTimer=.055;
 
    const colors=[
+
     '#ff5252','#ffad42','#fff04a',
+
     '#46e879','#45b9ff','#a56bff','#ff65d5'
+
    ];
 
    createSparkle(
+
     paper.x+(Math.random()-.5)*50,
+
     paper.y+(Math.random()-.5)*50,
+
     colors[Math.floor(Math.random()*colors.length)]
+
    );
+
   }
 
   $('invincibleTimeDisplay').textContent=invincibleTime.toFixed(1);
 
   if(invincibleTime<=0){
+
    $('invincibleBadge').classList.add('hidden');
+
    floatText(paper.x,paper.y-35,'無敵終了！','#64748b');
+
   }
+
  }
 
  distance+=(speed/42)*gameDt;
+
  speed=Math.min(540,230+distance*2.1);
+
  rollAngle+=(speed/28)*gameDt;
 
  rollRadius=Math.max(18,38-distance*.08);
@@ -1196,270 +1952,441 @@ function update(dt){
  sound.playRollTick((speed-230)/310);
 
  // キーボード操作
+
  const keySpeed=420;
 
  if(input.left)paper.targetX-=keySpeed*gameDt;
+
  if(input.right)paper.targetX+=keySpeed*gameDt;
 
  paper.targetX=Math.max(26,Math.min(W-26,paper.targetX));
 
  const oldX=paper.x;
+
  const lerp=1-Math.exp(-16*gameDt);
 
  paper.x+=(paper.targetX-paper.x)*lerp;
+
  paper.vx=(paper.x-oldX)/Math.max(gameDt,.001);
 
  const absV=Math.abs(paper.vx);
+
  const stretch=Math.abs(paper.x-W/2)/(W*.5);
 
  if(invincibleTime<=0){
+
   if(absV>335){
+
    const excess=(absV-335)/460;
+
    durability-=(30+excess*68)*gameDt;
+
   }else{
+
    durability=Math.min(100,durability+(stretch>.75?5:11)*gameDt);
+
   }
+
  }else{
+
   durability=Math.min(100,durability+7*gameDt);
+
  }
 
  if(durability<30&&performance.now()-lastWarning>450&&invincibleTime<=0){
+
   sound.playWarning();
+
   lastWarning=performance.now();
+
  }
 
  if(durability<=0){
+
   durability=0;
 
   if(tryRevive(paper.x,paper.y)){
+
    durability=50;
+
   }else{
+
    updateHUD();
+
    gameOver('ビリッ！急操作で紙がちぎれた！',paper.x,paper.y-30);
+
    return;
+
   }
+
  }
 
  // 紙の軌跡
+
  const bottom=rollY()+rollRadius*.55;
+
  const steps=paper.trail.length-1;
 
  for(let i=0;i<=steps;i++){
+
   const t=i/steps;
+
   const ty=bottom+(paper.y-bottom)*t;
+
   const e=t*t*(3-2*t);
+
   const wave=Math.sin(distance*3-t*5)*(2.5*t);
+
   const dx=W/2+(paper.x-W/2)*e+wave;
 
   paper.trail[i].y=ty;
+
   paper.trail[i].x+=(dx-paper.trail[i].x)*Math.min(1,gameDt*(12+t*14));
+
  }
 
  // 障害物・アイテム出現
+
  spawnTimer-=gameDt;
 
  if(spawnTimer<=0){
+
   spawnEntity();
+
   spawnTimer=Math.max(.48,1.18-distance*.0045)*(.8+Math.random()*.4);
+
  }
 
  // 障害物とアイテムの処理
+
  for(let i=entities.length-1;i>=0;i--){
+
   const e=entities[i];
 
   e.y-=speed*gameDt;
 
   if(e.type==='puddle'){
+
    e.wobble+=4*gameDt;
+
   }
+
   else if(e.type==='scissors'){
+
    e.phase+=12*gameDt;
+
    e.x+=e.vx*gameDt;
 
    if(e.x<35||e.x>W-35)e.vx*=-1;
+
   }
+
   else if(e.type==='catpaw'){
+
    e.phase+=4.5*gameDt;
+
    const ex=(Math.sin(e.phase)*.5+.5)*e.reach;
+
    e.x=e.left?-15+ex:W+15-ex;
+
   }
+
   else if(e.type==='fan'){
+
    e.angle+=18*gameDt;
 
    if(invincibleTime<=0&&Math.abs(e.y-paper.y)<48){
+
     paper.targetX+=(e.right?185:-185)*gameDt;
+
     durability-=14*gameDt;
+
    }
+
   }
+
   else if(
+
    e.type==='repair'||
+
    e.type==='gold'||
+
    e.type==='star'||
+
    e.type==='mystery'
+
   ){
+
    e.bob+=5*gameDt;
+
    if(e.type==='star'||e.type==='mystery')e.rotation+=2.5*gameDt;
+
   }
 
   // アイテム磁石：近くのアイテムをプレイヤーに引き寄せる
+
   if(
+
    magnetTime>0&&
+
    ['repair','gold','star','mystery'].includes(e.type)
+
   ){
+
    const dx=paper.x-e.x;
+
    const dy=paper.y-e.y;
+
    const dist=Math.hypot(dx,dy);
 
    if(dist<210){
+
     const pull=(1-dist/260)*7;
+
     e.x+=dx*pull*gameDt;
+
     e.y+=dy*pull*gameDt;
+
    }
+
   }
 
   const pts=[
+
    {x:paper.x,y:paper.y},
+
    paper.trail[Math.floor(paper.trail.length*.78)]
+
   ];
 
   const hit=pts.some(p=>
+
    p&&Math.hypot(p.x-e.x,p.y-e.y)<e.radius+paper.width*.36
+
   );
 
   if(hit){
 
    if(e.type==='repair'){
+
     durability=Math.min(100,durability+35);
+
     sound.playItem(false);
+
     floatText(e.x,e.y-10,'耐久 +35%!','#10b981');
+
     entities.splice(i,1);
+
     continue;
+
    }
 
    if(e.type==='gold'){
+
     distance+=5;
+
     durability=Math.min(100,durability+20);
+
     sound.playItem(true);
+
     floatText(e.x,e.y-10,'+5.0m ボーナス!','#f59e0b');
+
     entities.splice(i,1);
+
     continue;
+
    }
 
    if(e.type==='star'){
+
     activateInvincible();
+
     entities.splice(i,1);
+
     continue;
+
    }
 
    // ミステリーボックスを開封
+
    if(e.type==='mystery'){
+
     activateMystery();
+
     entities.splice(i,1);
+
     continue;
+
    }
 
    // 分身が障害物を肩代わり
+
    if(cloneTime>0&&invincibleTime<=0){
+
     cloneTime=0;
+
     cloneFlash=.65;
+
     floatText(e.x,e.y-15,'分身が守ってくれた！','#9333ea');
 
     for(let k=0;k<18;k++){
+
      createSparkle(
+
       e.x+(Math.random()-.5)*45,
+
       e.y+(Math.random()-.5)*45,
+
       ['#c084fc','#e9d5ff','#ffffff'][k%3]
+
      );
+
     }
 
     entities.splice(i,1);
+
     continue;
+
    }
 
    if(invincibleTime>0){
+
     if(e.type==='puddle'){
+
      floatText(e.x,e.y,'水たまり突破！','#38bdf8');
+
     }else if(e.type==='scissors'){
+
      floatText(e.x,e.y,'ハサミ突破！','#a78bfa');
+
     }else if(e.type==='catpaw'){
+
      floatText(e.x,e.y,'猫の手突破！','#fb923c');
+
     }
 
     for(let k=0;k<7;k++){
+
      createSparkle(
+
       e.x+(Math.random()-.5)*30,
+
       e.y+(Math.random()-.5)*30,
+
       rainbowColor(Math.random()*100)
+
      );
+
     }
 
     entities.splice(i,1);
+
     continue;
+
    }
 
    if(e.type==='puddle'){
+
     gameOver('ビチャッ！水たまりでふやけた！',e.x,e.y);
+
     return;
+
    }
 
    if(e.type==='scissors'){
+
     gameOver('チョキン！ハサミで切られた！',e.x,e.y);
+
     return;
+
    }
 
    if(e.type==='catpaw'){
+
     gameOver('ニャー！猫に引きちぎられた！',e.x,e.y);
+
     return;
+
    }
+
   }
 
   if(e.y<-80)entities.splice(i,1);
+
  }
 
  updateHUD();
+
 }
 
+// ============================================================
+
+// HUD更新
 
 // ============================================================
-// HUD更新
-// ============================================================
+
 function updateHUD(){
+
  $('distanceDisplay').textContent=distance.toFixed(1);
 
  const pct=Math.max(0,Math.min(100,Math.round(durability)));
 
  $('tensionPercent').textContent=pct+'%';
+
  $('tensionBar').style.width=pct+'%';
 
  const bar=$('tensionBar');
+
  const label=$('tensionPercent');
+
  const box=$('tensionContainer');
 
  if(pct<=30){
+
   bar.className='h-full bg-gradient-to-r from-rose-500 to-red-600 rounded-full';
+
   label.className='text-rose-600 font-extrabold';
+
   box.classList.add('border-rose-400','danger-pulse');
+
   box.classList.remove('border-sky-200');
+
  }
+
  else if(pct<=60){
+
   bar.className='h-full bg-gradient-to-r from-amber-400 to-orange-400 rounded-full';
+
   label.className='text-amber-600 font-extrabold';
+
   box.classList.remove('border-rose-400','danger-pulse');
+
   box.classList.add('border-sky-200');
+
  }
+
  else{
+
   bar.className='h-full bg-gradient-to-r from-emerald-400 to-sky-400 rounded-full';
+
   label.className='text-sky-600 font-extrabold';
+
   box.classList.remove('border-rose-400','danger-pulse');
+
   box.classList.add('border-sky-200');
+
  }
+
 }
 
+// ============================================================
+
+// 描画
 
 // ============================================================
-// 描画
-// ============================================================
+
 function draw(){
+
  ctx.clearRect(0,0,W,H);
 
  drawGuides();
@@ -1467,110 +2394,179 @@ function draw(){
  entities.forEach(drawEntity);
 
  if(state!=='GAMEOVER'){
+
   drawRibbon();
+
  }else if(tearPoint){
+
   drawTorn();
+
  }
 
  if(state==='PLAYING'&&invincibleTime>0){
+
   drawInvincibleAura();
+
  }
 
  // 分身の描画
+
  if(state==='PLAYING'&&cloneTime>0){
+
   drawClone();
+
  }
 
  drawRoll();
 
  particles.forEach(p=>{
+
   ctx.save();
+
   ctx.translate(p.x,p.y);
+
   ctx.rotate(p.rot);
+
   ctx.fillStyle=p.color||'#bae6fd';
+
   ctx.strokeStyle='#cbd5e1';
+
   ctx.fillRect(-p.size/2,-p.size/2,p.size,p.size*.7);
+
   ctx.strokeRect(-p.size/2,-p.size/2,p.size,p.size*.7);
+
   ctx.restore();
+
  });
 
  floating.forEach(f=>{
+
   ctx.save();
+
   ctx.globalAlpha=Math.max(0,f.life);
+
   ctx.font='800 15px "M PLUS Rounded 1c"';
+
   ctx.textAlign='center';
+
   ctx.lineWidth=4;
+
   ctx.strokeStyle='white';
+
   ctx.strokeText(f.text,f.x,f.y);
+
   ctx.fillStyle=f.color;
+
   ctx.fillText(f.text,f.x,f.y);
+
   ctx.restore();
+
  });
+
 }
 
+// ============================================================
+
+// 分身の描画
 
 // ============================================================
-// 分身の描画
-// ============================================================
+
 function drawClone(){
+
  const t=performance.now()/1000;
+
  const offset=Math.sin(t*5)*5;
+
  const x=paper.x+55;
+
  const y=paper.y+offset;
 
  ctx.save();
+
  ctx.globalAlpha=.58;
+
  ctx.translate(x,y);
 
  ctx.shadowBlur=18;
+
  ctx.shadowColor='#a855f7';
 
  ctx.fillStyle='#e9d5ff';
+
  ctx.strokeStyle='#9333ea';
+
  ctx.lineWidth=3;
 
  ctx.beginPath();
+
  ctx.ellipse(0,0,19,25,0,0,Math.PI*2);
+
  ctx.fill();
+
  ctx.stroke();
 
  ctx.fillStyle='white';
+
  ctx.beginPath();
+
  ctx.ellipse(0,-2,11,15,0,0,Math.PI*2);
+
  ctx.fill();
 
  ctx.fillStyle='#7e22ce';
+
  ctx.beginPath();
+
  ctx.arc(-5,-5,2.2,0,Math.PI*2);
+
  ctx.arc(5,-5,2.2,0,Math.PI*2);
+
  ctx.fill();
 
  ctx.strokeStyle='#9333ea';
+
  ctx.lineWidth=2;
+
  ctx.beginPath();
+
  ctx.arc(0,3,5,.15,Math.PI-.15);
+
  ctx.stroke();
 
  ctx.restore();
 
  ctx.save();
+
  ctx.font='900 11px sans-serif';
+
  ctx.textAlign='center';
+
  ctx.fillStyle='#7e22ce';
+
  ctx.strokeStyle='white';
+
  ctx.lineWidth=3;
+
  ctx.strokeText('分身',x,y-34);
+
  ctx.fillText('分身',x,y-34);
+
  ctx.restore();
+
 }
 
+// ============================================================
+
+// 無敵中の虹色オーラ
 
 // ============================================================
-// 無敵中の虹色オーラ
-// ============================================================
+
 function drawInvincibleAura(){
+
  const t=performance.now()/1000;
+
  const pulse=1+Math.sin(t*9)*.07;
+
  const radius=36*pulse;
 
  ctx.save();
@@ -1578,72 +2574,109 @@ function drawInvincibleAura(){
  const grad=ctx.createConicGradient(t*2,paper.x,paper.y);
 
  grad.addColorStop(0,'#ff4545');
+
  grad.addColorStop(.17,'#ffb52e');
+
  grad.addColorStop(.34,'#fff44f');
+
  grad.addColorStop(.5,'#45e77b');
+
  grad.addColorStop(.67,'#55aaff');
+
  grad.addColorStop(.84,'#b56bff');
+
  grad.addColorStop(1,'#ff4545');
 
  ctx.strokeStyle=grad;
+
  ctx.lineWidth=5;
+
  ctx.shadowBlur=18;
+
  ctx.shadowColor='#e879f9';
 
  ctx.beginPath();
+
  ctx.arc(paper.x,paper.y,radius,0,Math.PI*2);
+
  ctx.stroke();
 
  ctx.globalAlpha=.18;
+
  ctx.fillStyle=grad;
+
  ctx.beginPath();
+
  ctx.arc(paper.x,paper.y,radius-3,0,Math.PI*2);
+
  ctx.fill();
 
  ctx.globalAlpha=1;
 
  for(let i=0;i<8;i++){
+
   const a=t*2.8+i*Math.PI/4;
+
   const r=radius+10;
+
   const x=paper.x+Math.cos(a)*r;
+
   const y=paper.y+Math.sin(a)*r;
 
   drawStarShape(x,y,4,7,5,`hsl(${(rainbowHue+i*45)%360},100%,65%)`,a);
+
  }
 
  ctx.restore();
+
 }
 
+// ============================================================
+
+// ガイド線
 
 // ============================================================
-// ガイド線
-// ============================================================
+
 function drawGuides(){
+
  const off=(distance*42)%90;
 
  ctx.save();
+
  ctx.strokeStyle='rgba(125,211,252,.35)';
+
  ctx.lineWidth=2;
+
  ctx.setLineDash([8,12]);
 
  for(let x=45;x<W;x+=90){
+
   ctx.beginPath();
+
   ctx.moveTo(x,-off);
+
   ctx.lineTo(x,H);
+
   ctx.stroke();
+
  }
 
  ctx.restore();
+
 }
 
+// ============================================================
+
+// 紙の描画
 
 // ============================================================
-// 紙の描画
-// ============================================================
+
 function drawRibbon(){
+
  if(paper.trail.length<2)return;
 
  const hw=paper.width/2;
+
  const danger=Math.max(0,(55-durability)/55);
 
  ctx.save();
@@ -1651,69 +2684,101 @@ function drawRibbon(){
  ctx.beginPath();
 
  paper.trail.forEach((p,i)=>{
+
   if(i)ctx.lineTo(p.x-hw+4,p.y+6);
+
   else ctx.moveTo(p.x-hw+4,p.y+6);
+
  });
 
  for(let i=paper.trail.length-1;i>=0;i--){
+
   const p=paper.trail[i];
+
   ctx.lineTo(p.x+hw+4,p.y+6);
+
  }
 
  ctx.closePath();
+
  ctx.fillStyle='rgba(15,23,42,.08)';
+
  ctx.fill();
 
  ctx.beginPath();
 
  paper.trail.forEach((p,i)=>{
+
   if(i)ctx.lineTo(p.x-hw,p.y);
+
   else ctx.moveTo(p.x-hw,p.y);
+
  });
 
  const tip=paper.trail[paper.trail.length-1];
 
  for(let t=0;t<=5;t++){
+
   ctx.lineTo(tip.x-hw+paper.width*t/5,tip.y+(t%2?4:0));
+
  }
 
  for(let i=paper.trail.length-1;i>=0;i--){
+
   const p=paper.trail[i];
+
   ctx.lineTo(p.x+hw,p.y);
+
  }
 
  ctx.closePath();
 
  ctx.fillStyle=`rgb(255,${Math.round(255-danger*145)},${Math.round(255-danger*145)})`;
+
  ctx.fill();
 
  ctx.lineWidth=2;
+
  ctx.strokeStyle=danger>.4?'#f43f5e':'#cbd5e1';
+
  ctx.stroke();
 
  ctx.strokeStyle=danger>.4?'rgba(244,63,94,.5)':'rgba(148,163,184,.55)';
+
  ctx.lineWidth=1.5;
+
  ctx.setLineDash([3,3]);
 
  const po=(distance*42)%38;
 
  for(let i=2;i<paper.trail.length-1;i+=4){
+
   const p=paper.trail[i];
+
   ctx.beginPath();
+
   ctx.moveTo(p.x-hw+2,p.y+po*.15);
+
   ctx.lineTo(p.x+hw-2,p.y+po*.15);
+
   ctx.stroke();
+
  }
 
  ctx.restore();
+
 }
 
+// ============================================================
+
+// ちぎれた紙
 
 // ============================================================
-// ちぎれた紙
-// ============================================================
+
 function drawTorn(){
+
  const hw=paper.width/2;
+
  const p=paper.trail[0];
 
  if(!p)return;
@@ -1721,590 +2786,905 @@ function drawTorn(){
  ctx.save();
 
  ctx.beginPath();
+
  ctx.moveTo(p.x-hw,p.y);
+
  ctx.lineTo(p.x-hw,p.y+42);
+
  ctx.lineTo(p.x-6,p.y+34);
+
  ctx.lineTo(p.x+4,p.y+46);
+
  ctx.lineTo(p.x+hw,p.y+36);
+
  ctx.lineTo(p.x+hw,p.y);
+
  ctx.closePath();
 
  ctx.fillStyle='white';
+
  ctx.fill();
 
  ctx.strokeStyle='#cbd5e1';
+
  ctx.lineWidth=2;
+
  ctx.stroke();
 
  ctx.restore();
+
 }
 
+// ============================================================
+
+// ロールの描画
 
 // ============================================================
-// ロールの描画
-// ============================================================
+
 function drawRoll(){
+
  const x=W/2;
+
  const y=rollY();
+
  const rw=86;
+
  const r=rollRadius;
 
  ctx.save();
 
  ctx.strokeStyle='#94a3b8';
+
  ctx.lineWidth=6;
+
  ctx.lineCap='round';
 
  ctx.beginPath();
+
  ctx.moveTo(x-rw/2-12,y-26);
+
  ctx.lineTo(x-rw/2-12,y);
+
  ctx.lineTo(x+rw/2+12,y);
+
  ctx.lineTo(x+rw/2+12,y-26);
+
  ctx.stroke();
 
  ctx.fillStyle='rgba(15,23,42,.1)';
+
  ctx.beginPath();
+
  ctx.roundRect(x-rw/2+3,y-r+5,rw,r*2,10);
+
  ctx.fill();
 
  const gr=ctx.createLinearGradient(0,y-r,0,y+r);
 
  gr.addColorStop(0,'#e2e8f0');
+
  gr.addColorStop(.25,'white');
+
  gr.addColorStop(.75,'#f8fafc');
+
  gr.addColorStop(1,'#cbd5e1');
 
  ctx.fillStyle=gr;
+
  ctx.strokeStyle='#94a3b8';
+
  ctx.lineWidth=2;
 
  ctx.beginPath();
+
  ctx.roundRect(x-rw/2,y-r,rw,r*2,8);
+
  ctx.fill();
+
  ctx.stroke();
 
  ctx.save();
 
  ctx.beginPath();
+
  ctx.roundRect(x-rw/2,y-r,rw,r*2,8);
+
  ctx.clip();
 
  ctx.strokeStyle='rgba(148,163,184,.35)';
+
  ctx.lineWidth=1.5;
+
  ctx.setLineDash([4,4]);
 
  for(let k=-2;k<=2;k++){
+
   const phase=(rollAngle+k*.9)%Math.PI;
+
   const ly=y+Math.cos(phase)*r*.88;
 
   ctx.beginPath();
+
   ctx.moveTo(x-rw/2,ly);
+
   ctx.lineTo(x+rw/2,ly);
+
   ctx.stroke();
+
  }
 
  ctx.restore();
 
  ctx.fillStyle='#f1f5f9';
+
  ctx.strokeStyle='#94a3b8';
 
  ctx.beginPath();
+
  ctx.ellipse(x+rw/2,y,11,r,0,0,Math.PI*2);
+
  ctx.fill();
+
  ctx.stroke();
 
  ctx.fillStyle='#b45309';
+
  ctx.beginPath();
+
  ctx.ellipse(x+rw/2,y,4.5,11,0,0,Math.PI*2);
+
  ctx.fill();
 
  ctx.restore();
+
 }
 
+// ============================================================
+
+// 星の形を描く共通関数
 
 // ============================================================
-// 星の形を描く共通関数
-// ============================================================
+
 function drawStarShape(x,y,inner,outer,points,color,rotation=0){
+
  ctx.save();
+
  ctx.translate(x,y);
+
  ctx.rotate(rotation);
 
  ctx.beginPath();
 
  for(let i=0;i<points*2;i++){
+
   const angle=-Math.PI/2+i*Math.PI/points;
+
   const r=i%2===0?outer:inner;
+
   const px=Math.cos(angle)*r;
+
   const py=Math.sin(angle)*r;
 
   if(i===0)ctx.moveTo(px,py);
+
   else ctx.lineTo(px,py);
+
  }
 
  ctx.closePath();
+
  ctx.fillStyle=color;
+
  ctx.fill();
 
  ctx.lineWidth=1.5;
+
  ctx.strokeStyle='rgba(255,255,255,.9)';
+
  ctx.stroke();
 
  ctx.restore();
+
 }
 
+// ============================================================
+
+// 障害物・アイテムの描画
 
 // ============================================================
-// 障害物・アイテムの描画
-// ============================================================
+
 function drawEntity(e){
+
  ctx.save();
+
  ctx.translate(e.x,e.y);
 
  if(e.type==='puddle'){
+
   ctx.scale(1+Math.sin(e.wobble)*.06,1+Math.cos(e.wobble)*.06);
 
   ctx.fillStyle='rgba(56,189,248,.78)';
+
   ctx.strokeStyle='#0284c7';
+
   ctx.lineWidth=2.5;
 
   ctx.beginPath();
+
   ctx.arc(0,0,e.radius,0,Math.PI*2);
+
   ctx.fill();
+
   ctx.stroke();
 
   ctx.fillStyle='white';
+
   ctx.beginPath();
+
   ctx.ellipse(-e.radius*.3,-e.radius*.3,e.radius*.28,e.radius*.14,-.5,0,Math.PI*2);
+
   ctx.fill();
 
   ctx.font='bold 11px sans-serif';
+
   ctx.fillStyle='#0369a1';
+
   ctx.textAlign='center';
+
   ctx.fillText('みず',0,4);
+
  }
 
  else if(e.type==='scissors'){
+
   const a=.22+Math.abs(Math.sin(e.phase))*.35;
 
   ctx.rotate(-Math.PI/2);
 
   for(const sign of [1,-1]){
+
    ctx.save();
+
    ctx.rotate(a*sign);
 
    ctx.fillStyle='#cbd5e1';
+
    ctx.strokeStyle='#475569';
+
    ctx.lineWidth=2;
 
    ctx.beginPath();
+
    ctx.moveTo(0,-3);
+
    ctx.lineTo(24,0);
+
    ctx.lineTo(0,4);
+
    ctx.closePath();
 
    ctx.fill();
+
    ctx.stroke();
 
    ctx.restore();
+
   }
 
   ctx.strokeStyle='#ef4444';
+
   ctx.lineWidth=4;
 
   [-8,8].forEach(y=>{
+
    ctx.beginPath();
+
    ctx.arc(-10,y,6,0,Math.PI*2);
+
    ctx.stroke();
+
   });
+
  }
 
  else if(e.type==='catpaw'){
+
   ctx.scale(e.left?1:-1,1);
 
   ctx.fillStyle='#fef3c7';
+
   ctx.strokeStyle='#d97706';
+
   ctx.lineWidth=2.5;
 
   ctx.beginPath();
+
   ctx.roundRect(-180,-16,185,32,16);
+
   ctx.fill();
+
   ctx.stroke();
 
   ctx.fillStyle='#f59e0b';
 
   for(let s=-140;s<=-35;s+=35){
+
    ctx.fillRect(s,-15,10,12);
+
   }
 
   ctx.fillStyle='#fb7185';
+
   ctx.beginPath();
+
   ctx.arc(0,0,7,0,Math.PI*2);
+
   ctx.fill();
 
   [[-7,-9],[2,-10],[8,-4],[4,8]].forEach(([x,y])=>{
+
    ctx.beginPath();
+
    ctx.arc(x,y,3.2,0,Math.PI*2);
+
    ctx.fill();
+
   });
+
  }
 
  else if(e.type==='fan'){
+
   const dir=e.right?1:-1;
 
   ctx.strokeStyle='rgba(56,189,248,.55)';
+
   ctx.lineWidth=2;
+
   ctx.setLineDash([8,8]);
 
   for(let row=-16;row<=16;row+=16){
+
    ctx.beginPath();
+
    ctx.moveTo(dir*26,row);
+
    ctx.lineTo(dir*W*.65,row);
+
    ctx.stroke();
+
   }
 
   ctx.setLineDash([]);
 
   ctx.fillStyle='#e0f2fe';
+
   ctx.strokeStyle='#0284c7';
+
   ctx.lineWidth=2.5;
 
   ctx.beginPath();
+
   ctx.arc(0,0,22,0,Math.PI*2);
+
   ctx.fill();
+
   ctx.stroke();
 
   ctx.save();
+
   ctx.rotate(e.angle);
 
   ctx.fillStyle='#38bdf8';
 
   for(let b=0;b<3;b++){
+
    ctx.rotate(Math.PI*2/3);
+
    ctx.beginPath();
+
    ctx.ellipse(0,-9,4,8,0,0,Math.PI*2);
+
    ctx.fill();
+
   }
 
   ctx.restore();
+
  }
 
  else if(e.type==='repair'||e.type==='gold'){
+
   const gold=e.type==='gold';
 
   ctx.scale(
+
    1+Math.sin(e.bob)*(gold?.1:.08),
+
    1+Math.sin(e.bob)*(gold?.1:.08)
+
   );
 
   ctx.fillStyle=gold?'#fef3c7':'#d1fae5';
+
   ctx.strokeStyle=gold?'#f59e0b':'#10b981';
+
   ctx.lineWidth=2.5;
 
   ctx.beginPath();
+
   ctx.arc(0,0,e.radius,0,Math.PI*2);
+
   ctx.fill();
+
   ctx.stroke();
 
   ctx.fillStyle=gold?'#fbbf24':'white';
+
   ctx.strokeStyle=gold?'#b45309':'#059669';
 
   ctx.beginPath();
+
   ctx.roundRect(-10,-8,20,16,4);
+
   ctx.fill();
+
   ctx.stroke();
 
   ctx.font='800 10px sans-serif';
+
   ctx.fillStyle=gold?'#b45309':'#047857';
+
   ctx.textAlign='center';
+
   ctx.fillText(gold?'+5m':'回復',0,16);
+
  }
 
  else if(e.type==='star'){
+
   const pulse=1+Math.sin(e.bob*2)*.12;
 
   ctx.scale(pulse,pulse);
+
   ctx.rotate(e.rotation);
 
   ctx.shadowBlur=22;
+
   ctx.shadowColor='#facc15';
 
   const glow=ctx.createRadialGradient(0,0,3,0,0,35);
+
   glow.addColorStop(0,'rgba(255,255,180,.95)');
+
   glow.addColorStop(.5,'rgba(255,220,50,.45)');
+
   glow.addColorStop(1,'rgba(255,220,50,0)');
 
   ctx.fillStyle=glow;
+
   ctx.beginPath();
+
   ctx.arc(0,0,35,0,Math.PI*2);
+
   ctx.fill();
 
   drawStarShape(0,0,12,24,5,'#facc15');
 
   ctx.shadowBlur=0;
+
   ctx.fillStyle='white';
 
   [[-18,-18],[19,-13],[17,17],[-17,17]].forEach(([x,y])=>{
+
    ctx.beginPath();
+
    ctx.arc(x,y,2.5,0,Math.PI*2);
+
    ctx.fill();
+
   });
 
   ctx.rotate(-e.rotation);
+
   ctx.font='900 10px sans-serif';
+
   ctx.textAlign='center';
+
   ctx.fillStyle='#92400e';
+
   ctx.strokeStyle='white';
+
   ctx.lineWidth=3;
+
   ctx.strokeText('無敵',0,39);
+
   ctx.fillText('無敵',0,39);
+
  }
 
  // ミステリーボックス
+
  else if(e.type==='mystery'){
+
   const pulse=1+Math.sin(e.bob*2)*.09;
 
   ctx.scale(pulse,pulse);
+
   ctx.rotate(Math.sin(e.rotation)*.08);
 
   ctx.shadowBlur=24;
+
   ctx.shadowColor='#a855f7';
 
   // 光の輪
+
   const glow=ctx.createRadialGradient(0,0,4,0,0,39);
+
   glow.addColorStop(0,'rgba(250,204,21,.5)');
+
   glow.addColorStop(1,'rgba(168,85,247,0)');
 
   ctx.fillStyle=glow;
+
   ctx.beginPath();
+
   ctx.arc(0,0,39,0,Math.PI*2);
+
   ctx.fill();
 
   // 箱本体
+
   const boxGrad=ctx.createLinearGradient(-22,-20,22,22);
+
   boxGrad.addColorStop(0,'#d8b4fe');
+
   boxGrad.addColorStop(.5,'#9333ea');
+
   boxGrad.addColorStop(1,'#581c87');
 
   ctx.fillStyle=boxGrad;
+
   ctx.strokeStyle='#facc15';
+
   ctx.lineWidth=3;
 
   ctx.beginPath();
+
   ctx.roundRect(-22,-20,44,40,8);
+
   ctx.fill();
+
   ctx.stroke();
 
   // フタ
+
   ctx.fillStyle='#c084fc';
+
   ctx.strokeStyle='#fef08a';
+
   ctx.lineWidth=2;
 
   ctx.beginPath();
+
   ctx.roundRect(-24,-23,48,11,5);
+
   ctx.fill();
+
   ctx.stroke();
 
   // ?
+
   ctx.shadowBlur=0;
+
   ctx.font='900 27px sans-serif';
+
   ctx.textAlign='center';
+
   ctx.textBaseline='middle';
+
   ctx.lineWidth=4;
+
   ctx.strokeStyle='#581c87';
+
   ctx.strokeText('?',0,1);
+
   ctx.fillStyle='#fff7ae';
+
   ctx.fillText('?',0,1);
 
   // 星の装飾
+
   ctx.fillStyle='white';
+
   [[-29,-27],[29,-22],[27,24],[-28,25]].forEach(([x,y])=>{
+
    ctx.beginPath();
+
    ctx.arc(x,y,2.5,0,Math.PI*2);
+
    ctx.fill();
+
   });
 
   ctx.textBaseline='alphabetic';
+
   ctx.font='900 10px sans-serif';
+
   ctx.fillStyle='#7e22ce';
+
   ctx.strokeStyle='white';
+
   ctx.lineWidth=3;
+
   ctx.strokeText('MYSTERY',0,36);
+
   ctx.fillText('MYSTERY',0,36);
+
  }
 
  ctx.restore();
+
 }
 
+// ============================================================
+
+// メインループ
 
 // ============================================================
-// メインループ
-// ============================================================
+
 function loop(ts){
+
  if(!lastTime)lastTime=ts;
 
  const dt=Math.min(.05,(ts-lastTime)/1000);
+
  lastTime=ts;
 
  update(dt);
+
  draw();
 
  requestAnimationFrame(loop);
+
 }
 
+// ============================================================
+
+// タッチ・マウス・キーボード操作
 
 // ============================================================
-// タッチ・マウス・キーボード操作
-// ============================================================
+
 function pointerDown(e){
+
  if(state!=='PLAYING')return;
 
  sound.init();
 
  input.down=true;
+
  input.lastX=e.touches?e.touches[0].clientX:e.clientX;
 
  touchHint.classList.add('hidden');
+
 }
 
 function pointerMove(e){
+
  if(state!=='PLAYING'||!input.down)return;
 
  const x=e.touches?e.touches[0].clientX:e.clientX;
+
  const dx=x-input.lastX;
 
  input.lastX=x;
+
  paper.targetX+=dx*1.15;
+
 }
 
 function pointerUp(){
+
  input.down=false;
+
 }
 
 canvas.addEventListener('touchstart',pointerDown,{passive:true});
+
 canvas.addEventListener('touchmove',pointerMove,{passive:true});
+
 canvas.addEventListener('touchend',pointerUp);
+
 canvas.addEventListener('touchcancel',pointerUp);
 
 canvas.addEventListener('mousedown',pointerDown);
+
 window.addEventListener('mousemove',pointerMove);
+
 window.addEventListener('mouseup',pointerUp);
 
 window.addEventListener('keydown',e=>{
+
  if(['ArrowLeft','a','A'].includes(e.key))input.left=true;
+
  if(['ArrowRight','d','D'].includes(e.key))input.right=true;
+
 });
 
 window.addEventListener('keyup',e=>{
+
  if(['ArrowLeft','a','A'].includes(e.key))input.left=false;
+
  if(['ArrowRight','d','D'].includes(e.key))input.right=false;
+
 });
 
+// ============================================================
+
+// ボタン
 
 // ============================================================
-// ボタン
-// ============================================================
+
 $('startBtn').addEventListener('click',startGame);
+
 $('retryBtn').addEventListener('click',startGame);
 
 $('soundToggleBtn').addEventListener('click',()=>{
+
  sound.init();
 
  const muted=sound.toggleMute();
 
  $('soundOnIcon').classList.toggle('hidden',muted);
+
  $('soundOffIcon').classList.toggle('hidden',!muted);
+
 });
 
 document.querySelectorAll('[data-reset-trigger]').forEach(b=>{
+
  b.addEventListener('click',()=>{
+
   $('resetConfirmModal').classList.remove('hidden');
+
  });
+
 });
 
 $('cancelResetBtn').addEventListener('click',()=>{
+
  $('resetConfirmModal').classList.add('hidden');
+
 });
 
 $('confirmResetBtn').addEventListener('click',()=>{
+
  entryId=null;
+
  clearRanking();
 
  $('resetConfirmModal').classList.add('hidden');
 
  showToast('TOP 5 ランキングをリセットしました');
+
 });
 
+// ============================================================
+
+// トースト表示
 
 // ============================================================
-// トースト表示
-// ============================================================
+
 function showToast(msg){
+
  $('toastMsg').textContent=msg;
+
  $('toastMsg').classList.remove('hidden');
 
  setTimeout(()=>{
+
   $('toastMsg').classList.add('hidden');
+
  },2200);
+
 }
 
+// ============================================================
+
+// 結果シェア
 
 // ============================================================
-// 結果シェア
-// ============================================================
+
 $('shareBtn').addEventListener('click',async()=>{
+
  const v=Math.round(distance*10)/10;
 
  const text=
+
   `🧻 トイレットペーパー・ロングランで【${v.toFixed(1)}m】伸ばしました！（1位記録: ${topScore().toFixed(1)}m） #トイレットペーパーゲーム`;
 
  try{
+
   if(navigator.clipboard&&window.isSecureContext){
+
    await navigator.clipboard.writeText(text);
+
   }else{
+
    const ta=document.createElement('textarea');
+
    ta.value=text;
+
    ta.style.position='fixed';
+
    ta.style.opacity='0';
 
    document.body.appendChild(ta);
+
    ta.select();
+
    document.execCommand('copy');
+
    ta.remove();
+
   }
 
   showToast('クリップボードにコピーしました！');
+
  }catch(e){
+
   showToast('コピーできませんでした');
+
  }
+
 });
 
+// ============================================================
+
+// 初期化
 
 // ============================================================
-// 初期化
-// ============================================================
+
 window.addEventListener('resize',resize);
 
 window.addEventListener('load',()=>{
+
  renderRankings();
+
  updateBest();
+
  resize();
+
  requestAnimationFrame(loop);
+
 });
 
 document.addEventListener('visibilitychange',()=>{
+
  if(document.hidden&&sound.bgmPlaying){
+
   sound.stopBGM();
+
  }else if(
+
   !document.hidden&&
+
   state==='PLAYING'&&
+
   !sound.muted&&
+
   sound.bgmWasPlaying
+
  ){
+
   sound.startBGM();
+
  }
+
 });
 
 </script>
+
 </body>
+
 </html>
