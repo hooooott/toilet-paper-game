@@ -17,9 +17,9 @@
       width: 100%;
       height: 100%;
       overflow: hidden;
-      background: #e8f0f7;
+      background: #e6eef5;
       font-family: -apple-system, BlinkMacSystemFont, "Hiragino Sans", "Yu Gothic", sans-serif;
-      color: #1f2937;
+      color: #111827;
     }
     #app {
       position: relative;
@@ -27,7 +27,7 @@
       max-width: 480px;
       height: 100dvh;
       margin: 0 auto;
-      background: #ffffff;
+      background: #f8fafc;
       box-shadow: 0 0 24px rgba(0, 0, 0, 0.12);
       overflow: hidden;
     }
@@ -36,63 +36,72 @@
       width: 100%;
       height: 100%;
     }
-    .hud {
+    .top-hud {
       position: absolute;
       top: 10px;
-      left: 10px;
-      right: 10px;
+      left: 12px;
+      right: 12px;
       z-index: 10;
       display: flex;
       justify-content: space-between;
       align-items: flex-start;
-      gap: 8px;
       pointer-events: none;
     }
-    .hud-box {
-      background: rgba(255, 255, 255, 0.92);
-      border: 2px solid #cbd5e1;
-      border-radius: 12px;
+    .stat-block {
+      background: rgba(255, 255, 255, 0.88);
+      border: 1px solid #cbd5e1;
+      border-radius: 10px;
       padding: 6px 10px;
-      font-size: 12px;
+      line-height: 1.3;
+    }
+    .stat-label {
+      font-size: 11px;
+      color: #475569;
       font-weight: 700;
-      line-height: 1.35;
-      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
     }
-    .hud-val {
-      font-size: 16px;
-      color: #0284c7;
+    .stat-value {
+      font-size: 18px;
+      font-weight: 800;
+      color: #0f172a;
     }
-    .durability-wrap {
+    .status-panel {
       position: absolute;
-      top: 66px;
-      left: 10px;
-      right: 10px;
+      top: 68px;
+      left: 12px;
+      right: 12px;
       z-index: 10;
-      background: rgba(255, 255, 255, 0.92);
-      border: 2px solid #cbd5e1;
-      border-radius: 12px;
-      padding: 6px 10px;
+      background: rgba(255, 255, 255, 0.9);
+      border: 1px solid #cbd5e1;
+      border-radius: 10px;
+      padding: 7px 10px;
       pointer-events: none;
     }
-    .durability-label {
+    .status-row {
       display: flex;
       justify-content: space-between;
+      align-items: center;
       font-size: 11px;
       font-weight: 700;
       margin-bottom: 4px;
     }
-    .bar-bg {
+    .gauge-bg {
       width: 100%;
-      height: 10px;
+      height: 8px;
       background: #e2e8f0;
       border-radius: 999px;
       overflow: hidden;
     }
-    .bar-fill {
+    .gauge-fill {
       width: 100%;
       height: 100%;
-      background: linear-gradient(90deg, #22c55e, #eab308);
-      transition: width 0.08s linear, background 0.2s ease;
+      background: #2563eb;
+      transition: width 0.06s linear, background 0.15s ease;
+    }
+    .hint-sub {
+      margin-top: 4px;
+      font-size: 10px;
+      color: #475569;
+      text-align: center;
     }
     .overlay {
       position: absolute;
@@ -116,415 +125,348 @@
       line-height: 1.3;
       color: #0f172a;
     }
-    .desc {
+    .lead {
       margin: 0;
       font-size: 13px;
-      line-height: 1.6;
-      color: #475569;
+      color: #334155;
     }
-    .rules {
+    .guide-box {
+      width: 100%;
       text-align: left;
-      background: #f1f5f9;
+      background: #ffffff;
+      border: 1px solid #cbd5e1;
       border-radius: 12px;
       padding: 12px 14px;
       font-size: 12px;
       line-height: 1.65;
-      color: #334155;
-      width: 100%;
+      color: #1e293b;
     }
-    .btn {
+    .start-btn {
       border: none;
       border-radius: 999px;
-      padding: 14px 28px;
-      font-size: 16px;
+      padding: 13px 28px;
+      font-size: 15px;
       font-weight: 800;
       color: #ffffff;
-      background: linear-gradient(135deg, #0284c7, #2563eb);
-      box-shadow: 0 6px 16px rgba(37, 99, 235, 0.35);
+      background: #0f172a;
       cursor: pointer;
     }
-    .btn:active {
+    .start-btn:active {
       transform: scale(0.97);
     }
   </style>
 </head>
 <body>
   <div id="app">
-    <div class="hud">
-      <div class="hud-box">
-        のばした長さ<br />
-        <span id="scoreText" class="hud-val">0.0m</span>
+    <div class="top-hud">
+      <div class="stat-block">
+        <div class="stat-label">のばした長さ</div>
+        <div id="lenVal" class="stat-value">0.0m</div>
       </div>
-      <div class="hud-box" style="text-align: right;">
-        1位記録<br />
-        <span id="bestText" class="hud-val">0.0m</span>
-      </div>
-    </div>
-
-    <div class="durability-wrap">
-      <div class="durability-label">
-        <span>🧻 紙の耐久度（急な横移動はちぎれ注意！）</span>
-        <span id="durText">100%</span>
-      </div>
-      <div class="bar-bg">
-        <div id="durBar" class="bar-fill"></div>
+      <div class="stat-block" style="text-align: right;">
+        <div class="stat-label">1位記録</div>
+        <div id="bestVal" class="stat-value">0.0m</div>
       </div>
     </div>
 
-    <canvas id="gameCanvas"></canvas>
-
-    <div id="startOverlay" class="overlay">
-      <h1>🧻 トイレペーパー<br />ロングラン！</h1>
-      <p class="desc">どこまで切らずに伸ばせるかな？</p>
-      <div class="rules">
-        👆 左右にスライド（PCは左右キー/マウス）して紙を誘導<br />
-        ⚠️ 急に大きく動かすと紙が傷んで耐久度が減るよ<br />
-        ⭐ 無敵スターでレインボー無敵化！障害物を吹き飛ばせる！
+    <div class="status-panel">
+      <div class="status-row">
+        <span>🧻 紙の耐久度（ちぎれ注意・急操作NG！）</span>
+        <span id="durVal">100%</span>
       </div>
-      <button id="startBtn" class="btn">ゲームスタート</button>
+      <div class="gauge-bg">
+        <div id="durFill" class="gauge-fill"></div>
+      </div>
+      <div class="hint-sub">👆 左右にやさしくスライドして紙を伸ばそう！ちぎれたら即終了！スリルアクション</div>
     </div>
 
-    <div id="gameOverOverlay" class="overlay hidden">
-      <h1 id="endTitle">紙がちぎれた！</h1>
-      <p class="desc" id="endScore">今回の記録：0.0m</p>
-      <p class="desc" id="endBest">自己ベスト：0.0m</p>
-      <button id="retryBtn" class="btn">もう一度遊ぶ</button>
+    <canvas id="paperCanvas"></canvas>
+
+    <div id="startScreen" class="overlay">
+      <h1>トイレペーパー ロングラン！</h1>
+      <p class="lead">どこまで切らずに伸ばせるかな？</p>
+      <div class="guide-box">
+        👆 左右にスライドして紙を誘導（急な横移動は「ちぎれ注意」！）<br />
+        🧻 紙が伸びるほどスピードアップ！やさしく操作しよう<br />
+        💥 耐久度が0になったり、強く引っ張りすぎると即終了！
+      </div>
+      <button id="startAction" class="start-btn">スタート</button>
+    </div>
+
+    <div id="endScreen" class="overlay hidden">
+      <h1 id="endMsg">紙がちぎれた！</h1>
+      <p class="lead" id="endLen">のばした長さ：0.0m</p>
+      <p class="lead" id="endBest">1位記録：0.0m</p>
+      <button id="retryAction" class="start-btn">もう一度</button>
     </div>
   </div>
 
   <script>
     (() => {
-      const canvas = document.getElementById("gameCanvas");
-      const ctx = canvas.getContext("2d");
       const app = document.getElementById("app");
+      const canvas = document.getElementById("paperCanvas");
+      const ctx = canvas.getContext("2d");
 
-      const scoreText = document.getElementById("scoreText");
-      const bestText = document.getElementById("bestText");
-      const durText = document.getElementById("durText");
-      const durBar = document.getElementById("durBar");
-      const startOverlay = document.getElementById("startOverlay");
-      const gameOverOverlay = document.getElementById("gameOverOverlay");
-      const startBtn = document.getElementById("startBtn");
-      const retryBtn = document.getElementById("retryBtn");
-      const endTitle = document.getElementById("endTitle");
-      const endScore = document.getElementById("endScore");
+      const lenVal = document.getElementById("lenVal");
+      const bestVal = document.getElementById("bestVal");
+      const durVal = document.getElementById("durVal");
+      const durFill = document.getElementById("durFill");
+
+      const startScreen = document.getElementById("startScreen");
+      const endScreen = document.getElementById("endScreen");
+      const startAction = document.getElementById("startAction");
+      const retryAction = document.getElementById("retryAction");
+      const endMsg = document.getElementById("endMsg");
+      const endLen = document.getElementById("endLen");
       const endBest = document.getElementById("endBest");
 
-      const BEST_KEY = "tp_longrun_best_v1";
-      let bestMeters = parseFloat(localStorage.getItem(BEST_KEY) || "0") || 0;
-      bestText.textContent = bestMeters.toFixed(1) + "m";
+      const STORAGE_KEY = "tp_longrun_slide_best_v1";
+      let bestScore = parseFloat(localStorage.getItem(STORAGE_KEY) || "0") || 0;
+      bestVal.textContent = bestScore.toFixed(1) + "m";
 
-      let width = 360;
-      let height = 640;
+      let viewW = 360;
+      let viewH = 640;
       let dpr = 1;
 
-      function resize() {
-        const rect = app.getBoundingClientRect();
-        width = Math.max(280, rect.width);
-        height = Math.max(420, rect.height);
+      function fitCanvas() {
+        const r = app.getBoundingClientRect();
+        viewW = Math.max(280, r.width);
+        viewH = Math.max(420, r.height);
         dpr = Math.min(window.devicePixelRatio || 1, 2);
-        canvas.width = Math.floor(width * dpr);
-        canvas.height = Math.floor(height * dpr);
+        canvas.width = Math.floor(viewW * dpr);
+        canvas.height = Math.floor(viewH * dpr);
         ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
       }
-      resize();
-      window.addEventListener("resize", resize);
+      fitCanvas();
+      window.addEventListener("resize", fitCanvas);
 
-      let state = "title"; // "title" | "playing" | "gameover"
-      let distanceMeters = 0;
+      let phase = "ready"; // "ready" | "playing" | "ended"
+      let lengthMeters = 0;
       let durability = 100;
-      let speed = 210; // px/sec
-      let starTimer = 0;
-      let hue = 0;
+      let pullSpeed = 160; // px/sec
 
-      // 紙の先端位置
-      let paperX = width * 0.5;
-      let targetX = width * 0.5;
-      let prevPaperX = width * 0.5;
-      const paperY = () => Math.min(height * 0.72, height - 130);
-      const paperWidth = 64;
+      const paperW = 72;
+      let tipX = viewW * 0.5;
+      let targetTipX = viewW * 0.5;
+      let prevTipX = viewW * 0.5;
+      const tipY = () => Math.min(viewH * 0.75, viewH - 120);
 
-      // 障害物・アイテム配列
-      let entities = [];
-      let spawnTimer = 0;
-      let lastTime = performance.now();
+      let guideWavePhase = 0;
+      let lastTs = performance.now();
 
-      function resetGame() {
-        distanceMeters = 0;
-        durability = 100;
-        speed = 210;
-        starTimer = 0;
-        paperX = width * 0.5;
-        targetX = width * 0.5;
-        prevPaperX = width * 0.5;
-        entities = [];
-        spawnTimer = 0.4;
-        updateHud();
-      }
-
-      function updateHud() {
-        scoreText.textContent = distanceMeters.toFixed(1) + "m";
-        if (distanceMeters > bestMeters) {
-          bestMeters = distanceMeters;
-          localStorage.setItem(BEST_KEY, bestMeters.toFixed(1));
+      function syncHud() {
+        lenVal.textContent = lengthMeters.toFixed(1) + "m";
+        if (lengthMeters > bestScore) {
+          bestScore = lengthMeters;
+          localStorage.setItem(STORAGE_KEY, bestScore.toFixed(1));
         }
-        bestText.textContent = bestMeters.toFixed(1) + "m";
+        bestVal.textContent = bestScore.toFixed(1) + "m";
 
-        const d = Math.max(0, Math.min(100, durability));
-        durText.textContent = Math.round(d) + "%";
-        durBar.style.width = d + "%";
-        if (d > 50) {
-          durBar.style.background = "linear-gradient(90deg, #22c55e, #84cc16)";
-        } else if (d > 25) {
-          durBar.style.background = "linear-gradient(90deg, #eab308, #f97316)";
+        const clamped = Math.max(0, Math.min(100, durability));
+        durVal.textContent = Math.round(clamped) + "%";
+        durFill.style.width = clamped + "%";
+        if (clamped > 60) {
+          durFill.style.background = "#2563eb";
+        } else if (clamped > 30) {
+          durFill.style.background = "#d97706";
         } else {
-          durBar.style.background = "#ef4444";
+          durFill.style.background = "#dc2626";
         }
       }
 
-      function startGame() {
-        resize();
-        resetGame();
-        state = "playing";
-        startOverlay.classList.add("hidden");
-        gameOverOverlay.classList.add("hidden");
+      function resetState() {
+        lengthMeters = 0;
+        durability = 100;
+        pullSpeed = 160;
+        tipX = viewW * 0.5;
+        targetTipX = viewW * 0.5;
+        prevTipX = viewW * 0.5;
+        guideWavePhase = 0;
+        syncHud();
       }
 
-      function gameOver(reason) {
-        if (state !== "playing") return;
-        state = "gameover";
-        updateHud();
-        endTitle.textContent = reason || "紙がちぎれた！";
-        endScore.textContent = "今回の記録：" + distanceMeters.toFixed(1) + "m";
-        endBest.textContent = "自己ベスト：" + bestMeters.toFixed(1) + "m";
-        gameOverOverlay.classList.remove("hidden");
+      function beginPlay() {
+        fitCanvas();
+        resetState();
+        phase = "playing";
+        startScreen.classList.add("hidden");
+        endScreen.classList.add("hidden");
       }
 
-      startBtn.addEventListener("click", startGame);
-      retryBtn.addEventListener("click", startGame);
+      function finishPlay(reasonText) {
+        if (phase !== "playing") return;
+        phase = "ended";
+        syncHud();
+        endMsg.textContent = reasonText || "紙がちぎれた！";
+        endLen.textContent = "のばした長さ：" + lengthMeters.toFixed(1) + "m";
+        endBest.textContent = "1位記録：" + bestScore.toFixed(1) + "m";
+        endScreen.classList.remove("hidden");
+      }
 
-      // ポインター操作（スマホタッチ＆マウスドラッグ）
-      let dragging = false;
-      function setTargetFromClientX(clientX) {
+      startAction.addEventListener("click", beginPlay);
+      retryAction.addEventListener("click", beginPlay);
+
+      let isSliding = false;
+      function updateTargetX(clientX) {
         const rect = canvas.getBoundingClientRect();
         const x = clientX - rect.left;
-        const margin = paperWidth * 0.5 + 16;
-        targetX = Math.max(margin, Math.min(width - margin, x));
+        const pad = paperW * 0.5 + 14;
+        targetTipX = Math.max(pad, Math.min(viewW - pad, x));
       }
 
       canvas.addEventListener("pointerdown", (e) => {
-        if (state !== "playing") return;
-        dragging = true;
-        setTargetFromClientX(e.clientX);
+        if (phase !== "playing") return;
+        isSliding = true;
+        updateTargetX(e.clientX);
       });
       window.addEventListener("pointermove", (e) => {
-        if (!dragging || state !== "playing") return;
-        setTargetFromClientX(e.clientX);
+        if (!isSliding || phase !== "playing") return;
+        updateTargetX(e.clientX);
       });
       window.addEventListener("pointerup", () => {
-        dragging = false;
+        isSliding = false;
       });
 
-      // キーボード操作（PC用）
-      const keys = { left: false, right: false };
+      const keyState = { left: false, right: false };
       window.addEventListener("keydown", (e) => {
-        if (e.key === "ArrowLeft" || e.key === "a" || e.key === "A") keys.left = true;
-        if (e.key === "ArrowRight" || e.key === "d" || e.key === "D") keys.right = true;
+        if (e.key === "ArrowLeft" || e.key === "a" || e.key === "A") keyState.left = true;
+        if (e.key === "ArrowRight" || e.key === "d" || e.key === "D") keyState.right = true;
       });
       window.addEventListener("keyup", (e) => {
-        if (e.key === "ArrowLeft" || e.key === "a" || e.key === "A") keys.left = false;
-        if (e.key === "ArrowRight" || e.key === "d" || e.key === "D") keys.right = false;
+        if (e.key === "ArrowLeft" || e.key === "a" || e.key === "A") keyState.left = false;
+        if (e.key === "ArrowRight" || e.key === "d" || e.key === "D") keyState.right = false;
       });
 
-      function spawnEntity() {
-        const margin = 36;
-        const x = margin + Math.random() * Math.max(40, width - margin * 2);
-        const r = Math.random();
-        if (r < 0.16) {
-          entities.push({ type: "star", x, y: -24, size: 28, vy: speed });
-        } else if (r < 0.32) {
-          entities.push({ type: "roll", x, y: -24, size: 28, vy: speed });
-        } else {
-          entities.push({ type: "spike", x, y: -24, size: 32, vy: speed });
-        }
-      }
-
-      function drawBackground() {
+      function drawGrid() {
         ctx.fillStyle = "#f8fafc";
-        ctx.fillRect(0, 0, width, height);
+        ctx.fillRect(0, 0, viewW, viewH);
 
-        // 方眼グリッド
+        const cell = 26;
+        const scrollY = (lengthMeters * 55) % cell;
         ctx.strokeStyle = "#e2e8f0";
         ctx.lineWidth = 1;
-        const step = 28;
-        const offsetY = (distanceMeters * 60) % step;
-        for (let x = 0; x <= width; x += step) {
+        for (let x = 0; x <= viewW; x += cell) {
           ctx.beginPath();
           ctx.moveTo(x, 0);
-          ctx.lineTo(x, height);
+          ctx.lineTo(x, viewH);
           ctx.stroke();
         }
-        for (let y = offsetY; y <= height; y += step) {
+        for (let y = scrollY; y <= viewH; y += cell) {
           ctx.beginPath();
           ctx.moveTo(0, y);
-          ctx.lineTo(width, y);
+          ctx.lineTo(viewW, y);
           ctx.stroke();
         }
       }
 
-      function drawPaper() {
-        const py = paperY();
-        const left = paperX - paperWidth / 2;
+      function drawPaperStrip() {
+        const yEnd = tipY();
+        const half = paperW * 0.5;
 
-        // 紙の帯（上から先端まで）
-        if (starTimer > 0) {
-          ctx.fillStyle = `hsl(${hue}, 90%, 62%)`;
-        } else {
-          ctx.fillStyle = "#ffffff";
+        // 上端（ロール元）から先端まで、なめらかに曲がる紙を描く
+        const segments = 24;
+        ctx.beginPath();
+        for (let i = 0; i <= segments; i++) {
+          const t = i / segments;
+          const y = t * yEnd;
+          // 紙の根元は中央付近、先端に向かって tipX へ滑らかにつながる
+          const curve = t * t * (3 - 2 * t);
+          const centerX = viewW * 0.5 * (1 - curve) + tipX * curve;
+          const lx = centerX - half;
+          if (i === 0) ctx.moveTo(lx, y);
+          else ctx.lineTo(lx, y);
         }
-        ctx.fillRect(left, 0, paperWidth, py);
+        for (let i = segments; i >= 0; i--) {
+          const t = i / segments;
+          const y = t * yEnd;
+          const curve = t * t * (3 - 2 * t);
+          const centerX = viewW * 0.5 * (1 - curve) + tipX * curve;
+          const rx = centerX + half;
+          ctx.lineTo(rx, y);
+        }
+        ctx.closePath();
 
-        // 紙の輪郭とミシン目
-        ctx.strokeStyle = starTimer > 0 ? "#b45309" : "#94a3b8";
+        ctx.fillStyle = durability < 30 ? "#fff1f2" : "#ffffff";
+        ctx.fill();
+        ctx.strokeStyle = durability < 30 ? "#e11d48" : "#64748b";
         ctx.lineWidth = 2;
-        ctx.strokeRect(left, 0, paperWidth, py);
+        ctx.stroke();
 
+        // ミシン目（点線）
+        ctx.save();
         ctx.setLineDash([5, 5]);
         ctx.strokeStyle = "#cbd5e1";
-        const perfStep = 48;
-        const perfOffset = (distanceMeters * 60) % perfStep;
-        for (let y = perfOffset; y < py; y += perfStep) {
+        ctx.lineWidth = 1.5;
+        const perfSpacing = 44;
+        const perfOffset = (lengthMeters * 55) % perfSpacing;
+        for (let y = perfOffset; y < yEnd; y += perfSpacing) {
+          const t = y / yEnd;
+          const curve = t * t * (3 - 2 * t);
+          const cx = viewW * 0.5 * (1 - curve) + tipX * curve;
           ctx.beginPath();
-          ctx.moveTo(left + 4, y);
-          ctx.lineTo(left + paperWidth - 4, y);
+          ctx.moveTo(cx - half + 6, y);
+          ctx.lineTo(cx + half - 6, y);
           ctx.stroke();
         }
-        ctx.setLineDash([]);
+        ctx.restore();
 
-        // 先端のロール（芯）
+        // 先端の紙ロール
         ctx.beginPath();
-        ctx.ellipse(paperX, py, paperWidth / 2, 11, 0, 0, Math.PI * 2);
-        ctx.fillStyle = starTimer > 0 ? `hsl(${(hue + 180) % 360}, 95%, 55%)` : "#f1f5f9";
+        ctx.ellipse(tipX, yEnd, half, 12, 0, 0, Math.PI * 2);
+        ctx.fillStyle = "#f1f5f9";
         ctx.fill();
-        ctx.strokeStyle = "#475569";
+        ctx.strokeStyle = "#334155";
         ctx.lineWidth = 2;
         ctx.stroke();
 
         ctx.beginPath();
-        ctx.ellipse(paperX, py, 9, 4, 0, 0, Math.PI * 2);
+        ctx.ellipse(tipX, yEnd, 11, 5, 0, 0, Math.PI * 2);
         ctx.fillStyle = "#cbd5e1";
         ctx.fill();
       }
 
-      function drawEntities() {
-        for (const ent of entities) {
-          if (ent.type === "spike") {
-            // トゲ障害物（赤三角）
-            ctx.fillStyle = "#ef4444";
-            ctx.beginPath();
-            ctx.moveTo(ent.x, ent.y - ent.size * 0.55);
-            ctx.lineTo(ent.x - ent.size * 0.5, ent.y + ent.size * 0.45);
-            ctx.lineTo(ent.x + ent.size * 0.5, ent.y + ent.size * 0.45);
-            ctx.closePath();
-            ctx.fill();
-            ctx.strokeStyle = "#991b1b";
-            ctx.lineWidth = 2;
-            ctx.stroke();
-          } else if (ent.type === "star") {
-            // 無敵スター
-            ctx.font = "26px sans-serif";
-            ctx.textAlign = "center";
-            ctx.textBaseline = "middle";
-            ctx.fillText("⭐", ent.x, ent.y);
-          } else if (ent.type === "roll") {
-            // 耐久回復ロール
-            ctx.font = "26px sans-serif";
-            ctx.textAlign = "center";
-            ctx.textBaseline = "middle";
-            ctx.fillText("🧻", ent.x, ent.y);
-          }
-        }
-      }
+      function tick(now) {
+        const dt = Math.min(0.05, (now - lastTs) / 1000);
+        lastTs = now;
 
-      function loop(now) {
-        const dt = Math.min(0.05, (now - lastTime) / 1000);
-        lastTime = now;
-        hue = (hue + dt * 240) % 360;
+        if (phase === "playing") {
+          if (keyState.left) targetTipX -= 260 * dt;
+          if (keyState.right) targetTipX += 260 * dt;
 
-        if (state === "playing") {
-          if (keys.left) targetX -= 320 * dt;
-          if (keys.right) targetX += 320 * dt;
-          const margin = paperWidth * 0.5 + 16;
-          targetX = Math.max(margin, Math.min(width - margin, targetX));
+          const pad = paperW * 0.5 + 14;
+          targetTipX = Math.max(pad, Math.min(viewW - pad, targetTipX));
 
-          prevPaperX = paperX;
-          paperX += (targetX - paperX) * Math.min(1, dt * 16);
+          prevTipX = tipX;
+          tipX += (targetTipX - tipX) * Math.min(1, dt * 14);
 
-          // 急な横移動による耐久度減少
-          const moveSpeed = Math.abs(paperX - prevPaperX) / Math.max(dt, 0.001);
-          if (moveSpeed > 420 && starTimer <= 0) {
-            durability -= (moveSpeed - 420) * 0.035 * dt;
+          // 急な横移動によるダメージ判定
+          const lateralSpeed = Math.abs(tipX - prevTipX) / Math.max(dt, 0.001);
+          const safeLateralSpeed = 340;
+          if (lateralSpeed > safeLateralSpeed) {
+            const excess = lateralSpeed - safeLateralSpeed;
+            durability -= excess * 0.055 * dt;
+          } else {
+            // やさしく動かしている間はわずかに回復
+            durability = Math.min(100, durability + 3.5 * dt);
           }
 
-          speed = Math.min(440, 210 + distanceMeters * 2.2);
-          distanceMeters += (speed * dt) / 55;
+          pullSpeed = Math.min(360, 160 + lengthMeters * 1.8);
+          lengthMeters += (pullSpeed * dt) / 60;
+          guideWavePhase += dt * 2.2;
 
-          if (starTimer > 0) {
-            starTimer = Math.max(0, starTimer - dt);
-          }
+          syncHud();
 
-          spawnTimer -= dt;
-          if (spawnTimer <= 0) {
-            spawnEntity();
-            spawnTimer = Math.max(0.42, 0.95 - distanceMeters * 0.008);
-          }
-
-          const py = paperY();
-          const halfW = paperWidth * 0.45;
-          const nextEntities = [];
-
-          for (const ent of entities) {
-            ent.y += speed * dt;
-            const hitX = Math.abs(ent.x - paperX) < halfW + ent.size * 0.4;
-            const hitY = Math.abs(ent.y - py) < ent.size * 0.55 + 12;
-
-            if (hitX && hitY) {
-              if (ent.type === "star") {
-                starTimer = 5.0;
-                continue;
-              } else if (ent.type === "roll") {
-                durability = Math.min(100, durability + 25);
-                continue;
-              } else if (ent.type === "spike") {
-                if (starTimer > 0) {
-                  // 無敵中は吹き飛ばす
-                  continue;
-                } else {
-                  durability -= 35;
-                  continue;
-                }
-              }
-            }
-
-            if (ent.y < height + 50) {
-              nextEntities.push(ent);
-            }
-          }
-          entities = nextEntities;
-
-          updateHud();
           if (durability <= 0) {
-            gameOver("紙がちぎれた！");
+            finishPlay("急な横移動で紙がちぎれた！");
           }
         }
 
-        drawBackground();
-        drawPaper();
-        drawEntities();
-        requestAnimationFrame(loop);
+        drawGrid();
+        drawPaperStrip();
+        requestAnimationFrame(tick);
       }
 
-      requestAnimationFrame(loop);
+      requestAnimationFrame(tick);
     })();
   </script>
 </body>
