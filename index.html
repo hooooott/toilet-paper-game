@@ -4,12 +4,14 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>トイレットペーパー・ロングラン</title>
+    <!-- ホーム画面追加用アイコン（SVGデータ埋め込み） -->
+    <link rel="apple-touch-icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 180 180'><rect width='180' height='180' rx='40' fill='%23FF9AA2'/><rect x='45' y='45' width='90' height='75' rx='12' fill='%23FFFFFF'/><ellipse cx='90' cy='45' rx='45' ry='16' fill='%23F3F4F6'/><ellipse cx='90' cy='45' rx='18' ry='6' fill='%239CA3AF'/><path d='M45 95 L45 145 L135 145 L135 95 Z' fill='%23FFFFFF'/><circle cx='75' cy='82' r='4' fill='%23374151'/><circle cx='105' cy='82' r='4' fill='%23374151'/><path d='M84 88 Q90 94 96 88' stroke='%23374151' stroke-width='3' fill='none' stroke-linecap='round'/></svg>">
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- Google Fonts: 丸みのあるポップな日本語フォント -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=M+PLUS+Rounded+1c:wght@500;700;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=M+PLUS+Rounded+1c:wght@500;700;800;900&display=swap" rel="stylesheet">
     <style>
         * {
             box-sizing: border-box;
@@ -23,16 +25,23 @@
             width: 100%;
             height: 100%;
             overflow: hidden;
-            touch-action: none; /* スマホでのスワイプによる画面スクロールを無効化 */
+            touch-action: none;
             font-family: 'M PLUS Rounded 1c', sans-serif;
             background-color: #e0f2fe;
+        }
+        /* キャンバス専用のタッチ操作無効化設定 */
+        #gameCanvas {
+            touch-action: none;
+            display: block;
+            width: 100%;
+            height: 100%;
         }
         /* バスルームのタイル風背景パターン */
         .bathroom-bg {
             background-color: #f0f9ff;
-            background-image: 
-                linear-gradient(to right, rgba(186, 230, 253, 0.5) 1px, transparent 1px),
-                linear-gradient(to bottom, rgba(186, 230, 253, 0.5) 1px, transparent 1px);
+            background-image:
+                linear-gradient(to right, rgba(186, 230, 253, 0.55) 1px, transparent 1px),
+                linear-gradient(to bottom, rgba(186, 230, 253, 0.55) 1px, transparent 1px);
             background-size: 36px 36px;
         }
         /* ポップな立体ボタン */
@@ -45,6 +54,7 @@
             box-shadow: 0 1px 0 #0284c7;
         }
         .btn-pop-green {
+            transition: transform 0.1s ease, box-shadow 0.1s ease;
             box-shadow: 0 5px 0 #15803d;
         }
         .btn-pop-green:active {
@@ -53,20 +63,28 @@
         }
         @keyframes pulse-fast {
             0%, 100% { transform: scale(1); }
-            50% { transform: scale(1.06); }
+            50% { transform: scale(1.04); }
         }
         .danger-pulse {
             animation: pulse-fast 0.35s infinite;
+        }
+        @keyframes banner-pop {
+            0% { transform: scale(0.82); opacity: 0; }
+            70% { transform: scale(1.05); opacity: 1; }
+            100% { transform: scale(1); opacity: 1; }
+        }
+        .record-banner-anim {
+            animation: banner-pop 0.4s cubic-bezier(0.22, 1, 0.36, 1) forwards;
         }
     </style>
 </head>
 <body class="flex items-center justify-center bathroom-bg">
 
     <!-- スマホ縦画面比率に最適化したメインコンテナ -->
-    <div id="game-wrapper" class="relative w-full h-full max-w-md bg-white/80 shadow-2xl overflow-hidden flex flex-col border-x-2 border-sky-200">
-        
+    <div id="game-wrapper" class="relative w-full h-full max-w-md bg-white/85 shadow-2xl overflow-hidden flex flex-col border-x-2 border-sky-200">
+
         <!-- ゲーム描画用Canvas -->
-        <canvas id="gameCanvas" class="block w-full h-full"></canvas>
+        <canvas id="gameCanvas"></canvas>
 
         <!-- プレイ中の上部HUD（スコア・テンションゲージ・ミュート） -->
         <div id="hud" class="hidden absolute top-0 left-0 w-full p-3 pointer-events-none flex flex-col gap-2 z-10">
@@ -82,11 +100,10 @@
                 <!-- ベスト＆サウンド切替 -->
                 <div class="flex items-center gap-2 pointer-events-auto">
                     <div class="bg-amber-50/95 border-2 border-amber-300 rounded-2xl px-3 py-1.5 text-right shadow-sm">
-                        <div class="text-[10px] font-bold text-amber-600 leading-none">BEST</div>
+                        <div class="text-[10px] font-bold text-amber-600 leading-none">1位記録</div>
                         <div class="text-sm font-extrabold text-amber-800"><span id="hudBestDisplay">0.0</span>m</div>
                     </div>
-                    <button id="soundToggleBtn" aria-label="音声切り替え" class="w-10 h-10 bg-white/95 border-2 border-sky-300 rounded-full flex items-center justify-center text-sky-600 shadow-sm active:scale-95">
-                        <!-- スピーカーアイコン（JSで切り替え） -->
+                    <button id="soundToggleBtn" type="button" aria-label="音声切り替え" class="w-10 h-10 bg-white/95 border-2 border-sky-300 rounded-full flex items-center justify-center text-sky-600 shadow-sm active:scale-95">
                         <svg id="soundOnIcon" xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
                             <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon>
                             <path d="M15.54 8.46a5 5 0 0 1 0 7.07"></path>
@@ -105,7 +122,7 @@
             <div id="tensionContainer" class="bg-white/95 backdrop-blur-sm border-2 border-sky-200 rounded-2xl px-3 py-1.5 shadow-sm transition-colors">
                 <div class="flex justify-between items-center text-xs font-bold mb-1">
                     <span id="tensionLabel" class="text-slate-600 flex items-center gap-1">
-                        🧻 紙の耐久度（急操作注意！）
+                        🧻 紙の耐久度（ちぎれ注意・急操作NG！）
                     </span>
                     <span id="tensionPercent" class="text-sky-600 font-extrabold">100%</span>
                 </div>
@@ -116,100 +133,138 @@
         </div>
 
         <!-- 画面下部の操作ガイド（開始直後のみ表示） -->
-        <div id="touchHint" class="hidden absolute bottom-8 left-0 w-full flex justify-center pointer-events-none z-10">
-            <div class="bg-slate-800/75 text-white text-xs font-bold px-4 py-2 rounded-full backdrop-blur-sm animate-bounce">
-                👆 指を左右にスライドして紙を操作！
+        <div id="touchHint" class="hidden absolute bottom-7 left-0 w-full flex justify-center pointer-events-none z-10">
+            <div class="bg-slate-800/80 text-white text-xs font-bold px-4 py-2 rounded-full backdrop-blur-sm animate-bounce">
+                👆 左右にやさしくスライドして紙を伸ばそう！
             </div>
         </div>
 
         <!-- スタート画面オーバーレイ -->
-        <div id="startScreen" class="absolute inset-0 bg-sky-900/30 backdrop-blur-[2px] flex flex-col items-center justify-center p-5 z-20">
-            <div class="bg-white rounded-3xl p-6 w-full max-w-sm shadow-xl border-4 border-sky-200 text-center">
-                <div class="inline-block bg-sky-100 text-sky-700 text-xs font-extrabold px-3 py-1 rounded-full mb-2">
+        <div id="startScreen" class="absolute inset-0 bg-sky-900/35 backdrop-blur-[2px] flex flex-col items-center justify-center p-4 z-20 overflow-y-auto">
+            <div class="bg-white rounded-3xl p-5 w-full max-w-sm shadow-xl border-4 border-sky-200 text-center my-auto">
+                <div class="inline-block bg-sky-100 text-sky-700 text-[11px] font-extrabold px-3 py-0.5 rounded-full mb-1.5">
                     ちぎれたら即終了！スリルアクション
                 </div>
-                <h1 class="text-2xl sm:text-3xl font-extrabold text-slate-800 leading-tight mb-1">
+                <h1 class="text-2xl font-black text-slate-800 leading-tight mb-0.5">
                     トイレットペーパー<br>
                     <span class="text-sky-500">ロングラン！</span>
                 </h1>
-                <p class="text-xs text-slate-500 font-bold mb-4">どこまで切らずに伸ばせるかな？</p>
+                <p class="text-[11px] text-slate-500 font-bold mb-3">どこまで切らずに伸ばせるかな？</p>
 
-                <!-- ベストスコア表示 -->
-                <div class="bg-amber-50 border-2 border-amber-200 rounded-2xl py-2 px-4 mb-4 flex items-center justify-center gap-2">
-                    <span class="text-lg">👑</span>
-                    <span class="text-xs font-bold text-amber-700">ハイスコア:</span>
-                    <span class="text-xl font-extrabold text-amber-600"><span id="startBestDisplay">0.0</span>m</span>
-                </div>
-
-                <!-- 遊び方カード -->
-                <div class="bg-slate-50 rounded-2xl p-3.5 text-left text-xs text-slate-600 space-y-2 mb-5 border border-slate-200">
+                <!-- 遊び方コンパクト案内 -->
+                <div class="bg-slate-50 rounded-2xl p-3 text-left text-[11px] text-slate-600 space-y-1.5 mb-3.5 border border-slate-200">
                     <div class="flex items-start gap-2">
-                        <span class="text-base leading-none">👆</span>
-                        <span><strong>左右にスワイプ</strong>して紙の先端を動かそう（PCはマウス・矢印キー対応）</span>
+                        <span class="text-sm leading-none">👆</span>
+                        <span><strong>左右にスライド</strong>して紙を誘導（急な横移動は「ちぎれ注意」！）</span>
                     </div>
                     <div class="flex items-start gap-2">
-                        <span class="text-base leading-none">⚡</span>
-                        <span><strong>急に大きく動かす</strong>と紙に負荷がかかり、赤くなると「ビリッ！」とちぎれます</span>
-                    </div>
-                    <div class="flex items-start gap-2">
-                        <span class="text-base leading-none">⚠️</span>
-                        <span><strong>水たまり・ハサミ・猫の手</strong>をよけつつ、<strong>ダブルロール</strong>で耐久回復！</span>
+                        <span class="text-sm leading-none">⚠️</span>
+                        <span><strong>水たまり・ハサミ・猫の手</strong>をよけ、<strong>回復・黄金ロール</strong>をゲット！</span>
                     </div>
                 </div>
 
-                <button id="startBtn" class="w-full py-3.5 bg-sky-500 hover:bg-sky-400 text-white font-extrabold text-lg rounded-2xl btn-pop cursor-pointer">
+                <!-- タイトル画面用 TOP 5 ランキングボード -->
+                <div class="bg-amber-50/80 border-2 border-amber-200 rounded-2xl p-3 mb-4 text-left">
+                    <div class="flex items-center justify-between mb-2">
+                        <span class="text-xs font-extrabold text-amber-800 flex items-center gap-1">
+                            🏆 マイベスト TOP 5
+                        </span>
+                        <button type="button" data-reset-trigger class="text-[10px] font-bold text-slate-500 hover:text-rose-600 bg-white/90 border border-slate-200 rounded-lg px-2 py-0.5 transition cursor-pointer">
+                            リセット
+                        </button>
+                    </div>
+                    <div id="startRankingList" class="space-y-1 text-xs">
+                        <!-- JSで動的描画 -->
+                    </div>
+                </div>
+
+                <button id="startBtn" type="button" class="w-full py-3.5 bg-sky-500 hover:bg-sky-400 text-white font-extrabold text-lg rounded-2xl btn-pop cursor-pointer">
                     🧻 ゲームスタート！
                 </button>
             </div>
         </div>
 
         <!-- ゲームオーバー画面オーバーレイ -->
-        <div id="gameOverScreen" class="hidden absolute inset-0 bg-slate-900/45 backdrop-blur-xs flex flex-col items-center justify-center p-5 z-20">
-            <div class="bg-white rounded-3xl p-6 w-full max-w-sm shadow-2xl border-4 border-rose-200 text-center">
-                <div id="failReasonBadge" class="inline-block bg-rose-100 text-rose-600 text-xs font-extrabold px-3 py-1 rounded-full mb-2">
+        <div id="gameOverScreen" class="hidden absolute inset-0 bg-slate-900/50 backdrop-blur-[2px] flex flex-col items-center justify-center p-4 z-20 overflow-y-auto">
+            <div class="bg-white rounded-3xl p-5 w-full max-w-sm shadow-2xl border-4 border-rose-200 text-center my-auto">
+                <div id="failReasonBadge" class="inline-block bg-rose-100 text-rose-600 text-[11px] font-extrabold px-3 py-0.5 rounded-full mb-1.5">
                     ビリッ！紙がちぎれてしまった！
                 </div>
-                <h2 class="text-2xl font-extrabold text-slate-800 mb-3">記録発表</h2>
+                <h2 class="text-xl font-black text-slate-800 mb-2">記録発表</h2>
 
-                <div class="bg-sky-50 border-2 border-sky-200 rounded-2xl p-4 mb-3">
-                    <div class="text-xs font-bold text-sky-600 mb-0.5">今回伸ばした長さ</div>
-                    <div class="text-4xl font-extrabold text-slate-800">
-                        <span id="finalDistance">0.0</span><span class="text-lg font-bold text-sky-600 ml-1">m</span>
+                <!-- 新記録 / TOP5ランクイン バナー -->
+                <div id="recordBanner" class="hidden mb-2.5 py-1.5 px-3 rounded-2xl font-extrabold text-xs record-banner-anim">
+                    <!-- JSで動的設定 -->
+                </div>
+
+                <div class="bg-sky-50 border-2 border-sky-200 rounded-2xl py-2.5 px-4 mb-2.5">
+                    <div class="text-[11px] font-bold text-sky-600 leading-none mb-0.5">今回伸ばした長さ</div>
+                    <div class="text-3xl font-black text-slate-800">
+                        <span id="finalDistance">0.0</span><span class="text-base font-bold text-sky-600 ml-0.5">m</span>
                     </div>
-                    <div id="newRecordTag" class="hidden mt-1.5 inline-block bg-amber-400 text-white text-xs font-extrabold px-2.5 py-0.5 rounded-full">
-                        🎉 NEW RECORD!!
+                    <p id="rankComment" class="text-[11px] font-bold text-slate-600 mt-1">
+                        称号：新人ペーパー職人
+                    </p>
+                </div>
+
+                <!-- ゲームオーバー画面用 TOP 5 ランキングボード -->
+                <div class="bg-amber-50/80 border-2 border-amber-200 rounded-2xl p-3 mb-3.5 text-left">
+                    <div class="flex items-center justify-between mb-1.5">
+                        <span class="text-xs font-extrabold text-amber-800 flex items-center gap-1">
+                            🏆 マイベスト TOP 5
+                        </span>
+                        <button type="button" data-reset-trigger class="text-[10px] font-bold text-slate-500 hover:text-rose-600 bg-white/90 border border-slate-200 rounded-lg px-2 py-0.5 transition cursor-pointer">
+                            リセット
+                        </button>
+                    </div>
+                    <div id="gameOverRankingList" class="space-y-1 text-xs">
+                        <!-- JSで動的描画 -->
                     </div>
                 </div>
 
-                <!-- 称号コメント -->
-                <p id="rankComment" class="text-xs font-bold text-slate-600 mb-5 bg-slate-100 py-2 px-3 rounded-xl">
-                    称号：新人ペーパー職人
-                </p>
-
-                <div class="flex flex-col gap-2.5">
-                    <button id="retryBtn" class="w-full py-3.5 bg-emerald-500 hover:bg-emerald-400 text-white font-extrabold text-lg rounded-2xl btn-pop-green cursor-pointer">
+                <div class="flex flex-col gap-2">
+                    <button id="retryBtn" type="button" class="w-full py-3 bg-emerald-500 hover:bg-emerald-400 text-white font-extrabold text-base rounded-2xl btn-pop-green cursor-pointer">
                         🔄 もう一度挑戦する
                     </button>
-                    <button id="shareBtn" class="w-full py-2.5 bg-sky-100 hover:bg-sky-200 text-sky-700 font-extrabold text-sm rounded-2xl transition active:scale-95 cursor-pointer">
+                    <button id="shareBtn" type="button" class="w-full py-2 bg-sky-100 hover:bg-sky-200 text-sky-700 font-extrabold text-xs rounded-2xl transition active:scale-95 cursor-pointer">
                         📋 結果をコピーしてシェア
                     </button>
                 </div>
             </div>
         </div>
 
-        <!-- カスタム通知トースト（alertの代わり） -->
-        <div id="toastMsg" class="hidden absolute bottom-6 left-1/2 -translate-x-1/2 bg-slate-800/90 text-white text-xs font-bold px-4 py-2.5 rounded-full shadow-lg z-30 whitespace-nowrap">
+        <!-- リセット確認ダイアログ（native confirm() の代替UI） -->
+        <div id="resetConfirmModal" class="hidden absolute inset-0 bg-slate-900/60 backdrop-blur-[2px] flex items-center justify-center p-5 z-30">
+            <div class="bg-white rounded-3xl p-5 w-full max-w-xs shadow-2xl border-2 border-rose-200 text-center">
+                <div class="text-2xl mb-1">🗑️</div>
+                <h3 class="text-base font-extrabold text-slate-800 mb-1">ランキングをリセットしますか？</h3>
+                <p class="text-xs text-slate-500 font-bold mb-4">保存されているTOP 5の記録がすべて消去されます。</p>
+                <div class="flex gap-2.5">
+                    <button id="cancelResetBtn" type="button" class="flex-1 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-extrabold text-xs rounded-xl cursor-pointer">
+                        キャンセル
+                    </button>
+                    <button id="confirmResetBtn" type="button" class="flex-1 py-2.5 bg-rose-500 hover:bg-rose-600 text-white font-extrabold text-xs rounded-xl shadow-sm cursor-pointer">
+                        リセットする
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- カスタム通知トースト -->
+        <div id="toastMsg" class="hidden absolute bottom-6 left-1/2 -translate-x-1/2 bg-slate-800/90 text-white text-xs font-bold px-4 py-2.5 rounded-full shadow-lg z-40 whitespace-nowrap">
             クリップボードにコピーしました！
         </div>
     </div>
 
     <script>
         /**
-         * トイレットペーパー・ロングラン
-         * Web Audio APIによる効果音合成 + Canvasによるなめらかなペーパー描画
+         * トイレットペーパー・ロングラン（完全版）
+         * - Web Audio API 効果音＆新記録ファンファーレ
+         * - localStorage による TOP 5 ローカルランキング（日付・1桁メートル記録）
+         * - タッチ／マウス／キーボード操作＆ちぎれ注意テンションシステム
          */
 
-        // --- サウンドエンジン（外部ファイル不要のシンセサイザー） ---
+        // --- サウンドエンジン（外部ファイル不要のWeb Audio APIシンセサイザー） ---
         class SoundFX {
             constructor() {
                 this.ctx = null;
@@ -218,14 +273,18 @@
             }
 
             init() {
-                if (!this.ctx) {
-                    const AudioCtx = window.AudioContext || window.webkitAudioContext;
-                    if (AudioCtx) {
-                        this.ctx = new AudioCtx();
+                try {
+                    if (!this.ctx) {
+                        const AudioCtx = window.AudioContext || window.webkitAudioContext;
+                        if (AudioCtx) {
+                            this.ctx = new AudioCtx();
+                        }
                     }
-                }
-                if (this.ctx && this.ctx.state === 'suspended') {
-                    this.ctx.resume();
+                    if (this.ctx && this.ctx.state === 'suspended') {
+                        this.ctx.resume();
+                    }
+                } catch (err) {
+                    console.warn('AudioContext init error:', err);
                 }
             }
 
@@ -234,94 +293,300 @@
                 return this.muted;
             }
 
-            // ロールがカラカラ回る軽い音
+            // 紙が引き出されるときの軽いカラカラ音
             playRollTick(speedRatio) {
                 if (this.muted || !this.ctx) return;
-                const now = this.ctx.currentTime;
-                if (now - this.lastRollTick < Math.max(0.06, 0.14 - speedRatio * 0.05)) return;
-                this.lastRollTick = now;
+                try {
+                    const now = this.ctx.currentTime;
+                    const interval = Math.max(0.06, 0.14 - speedRatio * 0.05);
+                    if (now - this.lastRollTick < interval) return;
+                    this.lastRollTick = now;
 
-                const osc = this.ctx.createOscillator();
-                const gain = this.ctx.createGain();
-                osc.type = 'triangle';
-                osc.frequency.setValueAtTime(220 + Math.random() * 60, now);
-                osc.frequency.exponentialRampToValueAtTime(90, now + 0.035);
-
-                gain.gain.setValueAtTime(0.03, now);
-                gain.gain.exponentialRampToValueAtTime(0.001, now + 0.035);
-
-                osc.connect(gain);
-                gain.connect(this.ctx.destination);
-                osc.start(now);
-                osc.stop(now + 0.04);
-            }
-
-            // アイテム取得音（キラリン♪）
-            playItem(isGold = false) {
-                if (this.muted || !this.ctx) return;
-                const now = this.ctx.currentTime;
-                const freqs = isGold ? [587.33, 880, 1174.66] : [523.25, 783.99];
-                freqs.forEach((f, idx) => {
                     const osc = this.ctx.createOscillator();
                     const gain = this.ctx.createGain();
-                    osc.type = 'sine';
-                    osc.frequency.setValueAtTime(f, now + idx * 0.06);
-                    gain.gain.setValueAtTime(0.12, now + idx * 0.06);
-                    gain.gain.exponentialRampToValueAtTime(0.001, now + idx * 0.06 + 0.22);
+                    osc.type = 'triangle';
+                    osc.frequency.setValueAtTime(220 + Math.random() * 55, now);
+                    osc.frequency.exponentialRampToValueAtTime(95, now + 0.032);
+
+                    gain.gain.setValueAtTime(0.025, now);
+                    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.032);
+
                     osc.connect(gain);
                     gain.connect(this.ctx.destination);
-                    osc.start(now + idx * 0.06);
-                    osc.stop(now + idx * 0.06 + 0.24);
-                });
+                    osc.start(now);
+                    osc.stop(now + 0.038);
+                } catch (err) {
+                    console.warn('playRollTick error:', err);
+                }
             }
 
-            // 危険警告音
+            // アイテム取得音
+            playItem(isGold = false) {
+                if (this.muted || !this.ctx) return;
+                try {
+                    const now = this.ctx.currentTime;
+                    const freqs = isGold ? [587.33, 880, 1174.66] : [523.25, 783.99];
+                    freqs.forEach((f, idx) => {
+                        const osc = this.ctx.createOscillator();
+                        const gain = this.ctx.createGain();
+                        osc.type = 'sine';
+                        osc.frequency.setValueAtTime(f, now + idx * 0.06);
+                        gain.gain.setValueAtTime(0.11, now + idx * 0.06);
+                        gain.gain.exponentialRampToValueAtTime(0.001, now + idx * 0.06 + 0.22);
+                        osc.connect(gain);
+                        gain.connect(this.ctx.destination);
+                        osc.start(now + idx * 0.06);
+                        osc.stop(now + idx * 0.06 + 0.24);
+                    });
+                } catch (err) {
+                    console.warn('playItem error:', err);
+                }
+            }
+
+            // ちぎれ注意の警告音
             playWarning() {
                 if (this.muted || !this.ctx) return;
-                const now = this.ctx.currentTime;
-                const osc = this.ctx.createOscillator();
-                const gain = this.ctx.createGain();
-                osc.type = 'sawtooth';
-                osc.frequency.setValueAtTime(440, now);
-                osc.frequency.setValueAtTime(520, now + 0.05);
-                gain.gain.setValueAtTime(0.04, now);
-                gain.gain.exponentialRampToValueAtTime(0.001, now + 0.1);
-                osc.connect(gain);
-                gain.connect(this.ctx.destination);
-                osc.start(now);
-                osc.stop(now + 0.11);
+                try {
+                    const now = this.ctx.currentTime;
+                    const osc = this.ctx.createOscillator();
+                    const gain = this.ctx.createGain();
+                    osc.type = 'sawtooth';
+                    osc.frequency.setValueAtTime(460, now);
+                    osc.frequency.setValueAtTime(540, now + 0.045);
+                    gain.gain.setValueAtTime(0.035, now);
+                    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.095);
+                    osc.connect(gain);
+                    gain.connect(this.ctx.destination);
+                    osc.start(now);
+                    osc.stop(now + 0.1);
+                } catch (err) {
+                    console.warn('playWarning error:', err);
+                }
             }
 
-            // 紙がちぎれる音（ノイズ＋低音）
+            // 紙がちぎれる効果音
             playTear() {
                 if (this.muted || !this.ctx) return;
-                const now = this.ctx.currentTime;
-                const bufferSize = this.ctx.sampleRate * 0.35;
-                const buffer = this.ctx.createBuffer(1, bufferSize, this.ctx.sampleRate);
-                const data = buffer.getChannelData(0);
-                for (let i = 0; i < bufferSize; i++) {
-                    data[i] = (Math.random() * 2 - 1) * Math.exp(-i / (bufferSize * 0.35));
+                try {
+                    const now = this.ctx.currentTime;
+                    const bufferSize = Math.floor(this.ctx.sampleRate * 0.35);
+                    const buffer = this.ctx.createBuffer(1, bufferSize, this.ctx.sampleRate);
+                    const data = buffer.getChannelData(0);
+                    for (let i = 0; i < bufferSize; i++) {
+                        data[i] = (Math.random() * 2 - 1) * Math.exp(-i / (bufferSize * 0.35));
+                    }
+                    const noise = this.ctx.createBufferSource();
+                    noise.buffer = buffer;
+
+                    const filter = this.ctx.createBiquadFilter();
+                    filter.type = 'bandpass';
+                    filter.frequency.setValueAtTime(1400, now);
+                    filter.frequency.exponentialRampToValueAtTime(300, now + 0.35);
+
+                    const gain = this.ctx.createGain();
+                    gain.gain.setValueAtTime(0.32, now);
+                    gain.gain.exponentialRampToValueAtTime(0.01, now + 0.35);
+
+                    noise.connect(filter);
+                    filter.connect(gain);
+                    gain.connect(this.ctx.destination);
+                    noise.start(now);
+                } catch (err) {
+                    console.warn('playTear error:', err);
                 }
-                const noise = this.ctx.createBufferSource();
-                noise.buffer = buffer;
+            }
 
-                const filter = this.ctx.createBiquadFilter();
-                filter.type = 'bandpass';
-                filter.frequency.setValueAtTime(1400, now);
-                filter.frequency.exponentialRampToValueAtTime(300, now + 0.35);
+            // 新記録（1位更新）またはTOP5入り時のファンファーレ
+            playFanfare(isFirstPlace = true) {
+                if (this.muted || !this.ctx) return;
+                try {
+                    const now = this.ctx.currentTime + 0.18;
+                    const notes = isFirstPlace
+                        ? [
+                            { freq: 523.25, time: 0.0, dur: 0.12 },   // C5
+                            { freq: 659.25, time: 0.11, dur: 0.12 },  // E5
+                            { freq: 783.99, time: 0.22, dur: 0.12 },  // G5
+                            { freq: 1046.50, time: 0.34, dur: 0.38 }, // C6
+                            { freq: 880.00, time: 0.56, dur: 0.12 },  // A5
+                            { freq: 1046.50, time: 0.70, dur: 0.45 }  // C6
+                        ]
+                        : [
+                            { freq: 523.25, time: 0.0, dur: 0.12 },
+                            { freq: 659.25, time: 0.12, dur: 0.12 },
+                            { freq: 783.99, time: 0.24, dur: 0.28 }
+                        ];
 
-                const gain = this.ctx.createGain();
-                gain.gain.setValueAtTime(0.35, now);
-                gain.gain.exponentialRampToValueAtTime(0.01, now + 0.35);
+                    notes.forEach(n => {
+                        const osc = this.ctx.createOscillator();
+                        const gain = this.ctx.createGain();
+                        osc.type = 'triangle';
+                        osc.frequency.setValueAtTime(n.freq, now + n.time);
 
-                noise.connect(filter);
-                filter.connect(gain);
-                gain.connect(this.ctx.destination);
-                noise.start(now);
+                        gain.gain.setValueAtTime(0.001, now + n.time);
+                        gain.gain.linearRampToValueAtTime(0.15, now + n.time + 0.02);
+                        gain.gain.exponentialRampToValueAtTime(0.001, now + n.time + n.dur);
+
+                        osc.connect(gain);
+                        gain.connect(this.ctx.destination);
+                        osc.start(now + n.time);
+                        osc.stop(now + n.time + n.dur + 0.02);
+                    });
+                } catch (err) {
+                    console.warn('playFanfare error:', err);
+                }
             }
         }
 
         const sound = new SoundFX();
+
+        // --- ローカルランキング管理（localStorage TOP 5） ---
+        const RANKING_STORAGE_KEY = 'tp_longrun_ranking_top5_v1';
+        const LEGACY_BEST_KEY = 'tp_longrun_best_v1';
+
+        function formatNowDateTime() {
+            const d = new Date();
+            const month = String(d.getMonth() + 1).padStart(2, '0');
+            const day = String(d.getDate()).padStart(2, '0');
+            const hours = String(d.getHours()).padStart(2, '0');
+            const minutes = String(d.getMinutes()).padStart(2, '0');
+            return `${month}/${day} ${hours}:${minutes}`;
+        }
+
+        function loadRanking() {
+            try {
+                const raw = localStorage.getItem(RANKING_STORAGE_KEY);
+                if (raw) {
+                    const parsed = JSON.parse(raw);
+                    if (Array.isArray(parsed)) {
+                        return parsed
+                            .filter(item => typeof item.distance === 'number' && !Number.isNaN(item.distance))
+                            .map(item => ({
+                                distance: Math.round(item.distance * 10) / 10,
+                                dateStr: item.dateStr || '--/-- --:--',
+                                id: item.id || String(Math.random())
+                            }))
+                            .sort((a, b) => b.distance - a.distance)
+                            .slice(0, 5);
+                    }
+                }
+                // 過去の単一ベストスコアがあれば引き継ぐ
+                const legacy = parseFloat(localStorage.getItem(LEGACY_BEST_KEY) || '0');
+                if (legacy > 0) {
+                    const initial = [{
+                        distance: Math.round(legacy * 10) / 10,
+                        dateStr: formatNowDateTime(),
+                        id: 'legacy-best'
+                    }];
+                    saveRanking(initial);
+                    return initial;
+                }
+            } catch (err) {
+                console.warn('loadRanking error:', err);
+            }
+            return [];
+        }
+
+        function saveRanking(list) {
+            try {
+                localStorage.setItem(RANKING_STORAGE_KEY, JSON.stringify(list.slice(0, 5)));
+            } catch (err) {
+                console.warn('saveRanking error:', err);
+            }
+        }
+
+        function clearRanking() {
+            rankingList = [];
+            try {
+                localStorage.removeItem(RANKING_STORAGE_KEY);
+                localStorage.removeItem(LEGACY_BEST_KEY);
+            } catch (err) {
+                console.warn('clearRanking error:', err);
+            }
+            renderRankingBoards();
+            updateBestScoreUI();
+        }
+
+        /**
+         * スコアを登録し、1位更新かTOP5入りかを返す
+         * @returns {{ rank: number|null, isFirstPlace: boolean }}
+         */
+        function recordScoreToRanking(rawDistance) {
+            const rounded = Math.round(rawDistance * 10) / 10;
+            if (rounded <= 0) {
+                return { rank: null, isFirstPlace: false };
+            }
+
+            const prevTopScore = rankingList.length > 0 ? rankingList[0].distance : 0;
+            const entryId = `${Date.now()}-${Math.random().toString(36).slice(2, 6)}`;
+            const newEntry = {
+                distance: rounded,
+                dateStr: formatNowDateTime(),
+                id: entryId
+            };
+
+            const combined = [...rankingList, newEntry]
+                .sort((a, b) => b.distance - a.distance)
+                .slice(0, 5);
+
+            const foundIndex = combined.findIndex(item => item.id === entryId);
+            const rank = foundIndex !== -1 ? foundIndex + 1 : null;
+            const isFirstPlace = rank === 1 && rounded > prevTopScore;
+
+            rankingList = combined;
+            saveRanking(rankingList);
+            renderRankingBoards();
+            updateBestScoreUI();
+
+            return { rank, isFirstPlace };
+        }
+
+        function renderRankingBoards(highlightId = null) {
+            const containers = [
+                document.getElementById('startRankingList'),
+                document.getElementById('gameOverRankingList')
+            ];
+
+            const medals = ['🥇', '🥈', '🥉', '4.', '5.'];
+
+            containers.forEach(container => {
+                if (!container) return;
+                container.innerHTML = '';
+
+                if (rankingList.length === 0) {
+                    const emptyEl = document.createElement('div');
+                    emptyEl.className = 'text-center py-3 text-slate-400 font-bold text-[11px]';
+                    emptyEl.textContent = 'まだ記録がありません。最初の1位を目指そう！';
+                    container.appendChild(emptyEl);
+                    return;
+                }
+
+                for (let i = 0; i < 5; i++) {
+                    const item = rankingList[i];
+                    const row = document.createElement('div');
+                    const isHighlighted = item && highlightId && item.id === highlightId;
+
+                    row.className = `flex items-center justify-between px-2.5 py-1 rounded-xl ${
+                        isHighlighted
+                            ? 'bg-amber-200/80 border border-amber-400 font-extrabold text-slate-900'
+                            : item
+                                ? 'bg-white/85 text-slate-700 font-bold'
+                                : 'bg-white/40 text-slate-400 font-medium'
+                    }`;
+
+                    const leftSpan = document.createElement('span');
+                    leftSpan.className = 'flex items-center gap-1.5';
+                    leftSpan.textContent = `${medals[i]} ${item ? `${item.distance.toFixed(1)}m` : '---'}`;
+
+                    const rightSpan = document.createElement('span');
+                    rightSpan.className = 'text-[10px] text-slate-400 tabular-nums';
+                    rightSpan.textContent = item ? item.dateStr : '';
+
+                    row.appendChild(leftSpan);
+                    row.appendChild(rightSpan);
+                    container.appendChild(row);
+                }
+            });
+        }
 
         // --- DOM要素の取得 ---
         const canvas = document.getElementById('gameCanvas');
@@ -331,7 +596,6 @@
         const hud = document.getElementById('hud');
         const distanceDisplay = document.getElementById('distanceDisplay');
         const hudBestDisplay = document.getElementById('hudBestDisplay');
-        const startBestDisplay = document.getElementById('startBestDisplay');
         const tensionBar = document.getElementById('tensionBar');
         const tensionPercent = document.getElementById('tensionPercent');
         const tensionContainer = document.getElementById('tensionContainer');
@@ -341,46 +605,49 @@
         const gameOverScreen = document.getElementById('gameOverScreen');
         const finalDistanceEl = document.getElementById('finalDistance');
         const failReasonBadge = document.getElementById('failReasonBadge');
-        const newRecordTag = document.getElementById('newRecordTag');
+        const recordBanner = document.getElementById('recordBanner');
         const rankComment = document.getElementById('rankComment');
+        const resetConfirmModal = document.getElementById('resetConfirmModal');
         const toastMsg = document.getElementById('toastMsg');
 
         const startBtn = document.getElementById('startBtn');
         const retryBtn = document.getElementById('retryBtn');
         const shareBtn = document.getElementById('shareBtn');
+        const confirmResetBtn = document.getElementById('confirmResetBtn');
+        const cancelResetBtn = document.getElementById('cancelResetBtn');
         const soundToggleBtn = document.getElementById('soundToggleBtn');
         const soundOnIcon = document.getElementById('soundOnIcon');
         const soundOffIcon = document.getElementById('soundOffIcon');
 
         // --- ゲーム状態管理 ---
-        const STORAGE_KEY = 'tp_longrun_best_v1';
-        let bestScore = parseFloat(localStorage.getItem(STORAGE_KEY) || '0');
+        let rankingList = loadRanking();
+        let lastRecordedEntryId = null;
 
         let width = 0;
         let height = 0;
         let dpr = 1;
 
         let gameState = 'START'; // 'START' | 'PLAYING' | 'GAMEOVER'
-        let distance = 0; // メートル
-        let speed = 240; // px/秒
+        let distance = 0;
+        let speed = 230;
         let rollAngle = 0;
-        let rollRadius = 36; // ロールの太さ（少しずつ細くなる演出）
+        let rollRadius = 38;
 
-        // 紙の耐久度（100が満タン、0でちぎれる）
+        // 耐久度（100%満タン → 0%でちぎれる）
         let durability = 100;
         let lastWarningTime = 0;
 
-        // 紙の先端（プレイヤーが操作するターゲット位置）
+        // 紙の先端＆軌跡
         const paper = {
             x: 0,
             y: 0,
             targetX: 0,
             vx: 0,
             width: 34,
-            trail: [] // 紙の軌跡ポイント [{x, y, wet}]
+            trail: []
         };
 
-        // 操作入力状態
+        // 操作入力
         const input = {
             isPointerDown: false,
             lastPointerX: 0,
@@ -388,29 +655,48 @@
             rightPressed: false
         };
 
-        // 障害物・アイテム・パーティクル・フローティングテキスト
         let entities = [];
         let particles = [];
         let floatingTexts = [];
         let spawnTimer = 0;
         let lastTime = 0;
-        let tearPoint = null; // ちぎれた位置の演出用
+        let tearPoint = null;
 
-        // --- 初期化＆リサイズ処理 ---
+        function getTopScore() {
+            return rankingList.length > 0 ? rankingList[0].distance : 0;
+        }
+
+        function updateBestScoreUI() {
+            hudBestDisplay.textContent = getTopScore().toFixed(1);
+        }
+
+        function showToast(message) {
+            toastMsg.textContent = message;
+            toastMsg.classList.remove('hidden');
+            setTimeout(() => {
+                toastMsg.classList.add('hidden');
+            }, 2200);
+        }
+
+        // --- リサイズ＆初期化 ---
         function resizeCanvas() {
-            const rect = wrapper.getBoundingClientRect();
-            dpr = Math.min(window.devicePixelRatio || 1, 2);
-            width = rect.width;
-            height = rect.height;
-            canvas.width = width * dpr;
-            canvas.height = height * dpr;
-            ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+            try {
+                const rect = wrapper.getBoundingClientRect();
+                dpr = Math.min(window.devicePixelRatio || 1, 2);
+                width = Math.max(280, rect.width);
+                height = Math.max(400, rect.height);
+                canvas.width = Math.floor(width * dpr);
+                canvas.height = Math.floor(height * dpr);
+                ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
 
-            if (gameState === 'START') {
-                paper.x = width / 2;
-                paper.targetX = width / 2;
-                paper.y = height * 0.44;
-                initPaperTrail();
+                if (gameState === 'START') {
+                    paper.x = width / 2;
+                    paper.targetX = width / 2;
+                    paper.y = height * 0.44;
+                    initPaperTrail();
+                }
+            } catch (err) {
+                console.warn('resizeCanvas error:', err);
             }
         }
 
@@ -431,13 +717,7 @@
             return Math.max(115, height * 0.16);
         }
 
-        function updateBestScoreUI() {
-            const formatted = bestScore.toFixed(1);
-            hudBestDisplay.textContent = formatted;
-            startBestDisplay.textContent = formatted;
-        }
-
-        // --- ゲーム開始処理 ---
+        // --- ゲーム開始 ---
         function startGame() {
             sound.init();
             gameState = 'PLAYING';
@@ -449,7 +729,8 @@
             particles = [];
             floatingTexts = [];
             tearPoint = null;
-            spawnTimer = 0.6;
+            lastRecordedEntryId = null;
+            spawnTimer = 0.65;
 
             paper.x = width / 2;
             paper.targetX = width / 2;
@@ -459,6 +740,7 @@
 
             startScreen.classList.add('hidden');
             gameOverScreen.classList.add('hidden');
+            resetConfirmModal.classList.add('hidden');
             hud.classList.remove('hidden');
             touchHint.classList.remove('hidden');
 
@@ -472,7 +754,6 @@
             sound.playTear();
             tearPoint = { x: breakX, y: breakY };
 
-            // 紙吹雪（ちぎれた紙片）パーティクル生成
             for (let i = 0; i < 24; i++) {
                 particles.push({
                     x: breakX + (Math.random() - 0.5) * 30,
@@ -487,31 +768,36 @@
                 });
             }
 
-            // ハイスコア更新判定
-            let isNew = false;
-            if (distance > bestScore) {
-                bestScore = distance;
-                localStorage.setItem(STORAGE_KEY, bestScore.toFixed(1));
-                isNew = true;
-                updateBestScoreUI();
-            }
+            const roundedDist = Math.round(distance * 10) / 10;
+            const { rank, isFirstPlace } = recordScoreToRanking(roundedDist);
 
-            // UI反映
-            failReasonBadge.textContent = reasonText;
-            finalDistanceEl.textContent = distance.toFixed(1);
-            if (isNew && distance > 0) {
-                newRecordTag.classList.remove('hidden');
+            if (rankingList.length > 0 && rank !== null) {
+                lastRecordedEntryId = rankingList[rank - 1]?.id || null;
+            }
+            renderRankingBoards(lastRecordedEntryId);
+
+            // 新記録・TOP5バナー表示とファンファーレ
+            recordBanner.classList.remove('hidden');
+            if (isFirstPlace) {
+                recordBanner.className = 'mb-2.5 py-1.5 px-3 rounded-2xl font-black text-xs bg-gradient-to-r from-amber-300 via-yellow-200 to-amber-300 text-amber-900 border-2 border-amber-400 shadow-sm record-banner-anim';
+                recordBanner.textContent = '🎉 NEW RECORD! 歴代1位を更新しました！';
+                sound.playFanfare(true);
+            } else if (rank !== null) {
+                recordBanner.className = 'mb-2.5 py-1.5 px-3 rounded-2xl font-extrabold text-xs bg-sky-100 text-sky-800 border-2 border-sky-300 record-banner-anim';
+                recordBanner.textContent = `⭐ TOP 5 ランクイン！（第${rank}位）`;
+                sound.playFanfare(false);
             } else {
-                newRecordTag.classList.add('hidden');
+                recordBanner.classList.add('hidden');
             }
 
-            // 距離に応じたユニーク称号
-            rankComment.textContent = getRankTitle(distance);
+            failReasonBadge.textContent = reasonText;
+            finalDistanceEl.textContent = roundedDist.toFixed(1);
+            rankComment.textContent = getRankTitle(roundedDist);
 
             touchHint.classList.add('hidden');
             setTimeout(() => {
                 gameOverScreen.classList.remove('hidden');
-            }, 550);
+            }, 520);
         }
 
         function getRankTitle(m) {
@@ -523,16 +809,14 @@
             return '称号：神に選ばれし無限ペーパー神';
         }
 
-        // --- 障害物・アイテムの生成 ---
+        // --- 障害物・アイテム生成 ---
         function spawnEntity() {
             const margin = 42;
             const spawnX = margin + Math.random() * (width - margin * 2);
             const spawnY = height + 50;
             const rand = Math.random();
 
-            // 難易度に応じて障害物比率を調整
             if (rand < 0.30) {
-                // 水たまり（ふやけてちぎれる）
                 entities.push({
                     type: 'puddle',
                     x: spawnX,
@@ -541,7 +825,6 @@
                     wobble: Math.random() * Math.PI * 2
                 });
             } else if (rand < 0.56) {
-                // ハサミ（左右に少し動くこともある）
                 const moving = distance > 18 && Math.random() < 0.45;
                 entities.push({
                     type: 'scissors',
@@ -551,8 +834,7 @@
                     vx: moving ? (Math.random() < 0.5 ? 75 : -75) : 0,
                     snipPhase: Math.random() * Math.PI * 2
                 });
-            } else if (rand < 0.74) {
-                // 猫の手（横の壁から飛び出してくる）
+            } else if (rand < 0.75) {
                 const fromLeft = Math.random() < 0.5;
                 entities.push({
                     type: 'catpaw',
@@ -564,7 +846,6 @@
                     radius: 22
                 });
             } else if (rand < 0.86) {
-                // 扇風機の風（紙を横に押し流し、耐久を少し削る）
                 const blowRight = spawnX < width / 2;
                 entities.push({
                     type: 'fan',
@@ -575,7 +856,6 @@
                     bladeAngle: 0
                 });
             } else if (rand < 0.95) {
-                // アイテム：ダブルロール（耐久度回復）
                 entities.push({
                     type: 'repair',
                     x: spawnX,
@@ -584,7 +864,6 @@
                     bob: 0
                 });
             } else {
-                // アイテム：黄金のペーパー（+5mボーナス＆耐久回復）
                 entities.push({
                     type: 'gold',
                     x: spawnX,
@@ -607,18 +886,16 @@
 
         // --- メイン更新ループ ---
         function update(dt) {
-            // パーティクル更新（ゲームオーバー後も動かす）
             for (let i = particles.length - 1; i >= 0; i--) {
                 const p = particles[i];
                 p.x += p.vx * dt;
                 p.y += p.vy * dt;
-                p.vy += 420 * dt; // 重力
+                p.vy += 420 * dt;
                 p.rot += p.vRot * dt;
                 p.life -= dt;
                 if (p.life <= 0) particles.splice(i, 1);
             }
 
-            // フローティングテキスト更新
             for (let i = floatingTexts.length - 1; i >= 0; i--) {
                 const ft = floatingTexts[i];
                 ft.y -= 45 * dt;
@@ -627,25 +904,20 @@
             }
 
             if (gameState !== 'PLAYING') {
-                // タイトル画面でもロールがゆっくり揺れる演出
                 if (gameState === 'START') {
                     rollAngle += 1.2 * dt;
                 }
                 return;
             }
 
-            // 1. 距離とスピードの進行
             const metersPerSec = speed / 42;
             distance += metersPerSec * dt;
-            // 距離に応じて少しずつ加速（上限あり）
             speed = Math.min(540, 230 + distance * 2.1);
             rollAngle += (speed / 28) * dt;
-            // ロールの残量が少しずつ減っていく演出（最小半径18）
             rollRadius = Math.max(18, 38 - distance * 0.08);
 
             sound.playRollTick((speed - 230) / 310);
 
-            // 2. プレイヤー操作による紙の先端移動
             const keySpeed = 420;
             if (input.leftPressed) paper.targetX -= keySpeed * dt;
             if (input.rightPressed) paper.targetX += keySpeed * dt;
@@ -654,28 +926,23 @@
             paper.targetX = Math.max(sideMargin, Math.min(width - sideMargin, paper.targetX));
 
             const prevX = paper.x;
-            // なめらかに追従
             const lerpFactor = 1 - Math.exp(-16 * dt);
             paper.x += (paper.targetX - paper.x) * lerpFactor;
             paper.vx = (paper.x - prevX) / Math.max(dt, 0.001);
 
-            // 3. テンション（急操作による負荷）計算
+            // 急操作によるテンション（ちぎれ注意）計算
             const absVx = Math.abs(paper.vx);
-            // ロール中心からの横ズレが大きいほど少し負荷が増える
             const stretchRatio = Math.abs(paper.x - width / 2) / (width * 0.5);
-            const safeSpeedThreshold = 340;
+            const safeSpeedThreshold = 335;
 
             if (absVx > safeSpeedThreshold) {
-                // 急激に動かすと耐久減少
-                const excess = (absVx - safeSpeedThreshold) / 480;
-                durability -= (28 + excess * 65) * dt;
+                const excess = (absVx - safeSpeedThreshold) / 460;
+                durability -= (30 + excess * 68) * dt;
             } else {
-                // 丁寧に操作していると少しずつ回復
                 const recoverRate = stretchRatio > 0.75 ? 5 : 11;
                 durability = Math.min(100, durability + recoverRate * dt);
             }
 
-            // 危険域の警告音
             if (durability < 30 && performance.now() - lastWarningTime > 450) {
                 sound.playWarning();
                 lastWarningTime = performance.now();
@@ -688,13 +955,12 @@
                 return;
             }
 
-            // 4. 紙の軌跡（ロールから先端までのしなやかなカーブ）更新
+            // 紙の軌跡更新
             const rollBottomY = getRollY() + rollRadius * 0.55;
             const steps = paper.trail.length - 1;
             for (let i = 0; i <= steps; i++) {
-                const t = i / steps; // 0: ロール側, 1: 先端側
+                const t = i / steps;
                 const targetY = rollBottomY + (paper.y - rollBottomY) * t;
-                // イージングカーブでロールから自然に垂れ下がる形にする
                 const ease = t * t * (3 - 2 * t);
                 const wave = Math.sin(distance * 3 - t * 5) * (2.5 * t);
                 const desiredX = (width / 2) + (paper.x - width / 2) * ease + wave;
@@ -703,11 +969,9 @@
                 paper.trail[i].x += (desiredX - paper.trail[i].x) * Math.min(1, dt * (12 + t * 14));
             }
 
-            // 5. 障害物・アイテムのスポーンと移動
             spawnTimer -= dt;
             if (spawnTimer <= 0) {
                 spawnEntity();
-                // スピードが上がると出現間隔も短くなる
                 const interval = Math.max(0.48, 1.18 - distance * 0.0045);
                 spawnTimer = interval * (0.8 + Math.random() * 0.4);
             }
@@ -716,7 +980,6 @@
                 const e = entities[i];
                 e.y -= speed * dt;
 
-                // 個別の動き
                 if (e.type === 'puddle') {
                     e.wobble += 4 * dt;
                 } else if (e.type === 'scissors') {
@@ -729,7 +992,6 @@
                     e.x = e.fromLeft ? (-15 + extend) : (width + 15 - extend);
                 } else if (e.type === 'fan') {
                     e.bladeAngle += 18 * dt;
-                    // 扇風機の風ゾーン判定（同じ高さ付近の紙を横に流す）
                     if (Math.abs(e.y - paper.y) < 48) {
                         const windForce = e.blowRight ? 185 : -185;
                         paper.targetX += windForce * dt;
@@ -739,7 +1001,6 @@
                     e.bob += 5 * dt;
                 }
 
-                // 当たり判定（紙の先端付近および少し上の紙本体とチェック）
                 const hitCheckPoints = [
                     { x: paper.x, y: paper.y },
                     paper.trail[Math.floor(paper.trail.length * 0.78)]
@@ -784,7 +1045,6 @@
                     }
                 }
 
-                // 画面外に出たら削除
                 if (e.y < -80) {
                     entities.splice(i, 1);
                 }
@@ -793,7 +1053,6 @@
             updateHUD();
         }
 
-        // --- HUD（UIバー・数値）の更新 ---
         function updateHUD() {
             distanceDisplay.textContent = distance.toFixed(1);
             const pct = Math.max(0, Math.min(100, Math.round(durability)));
@@ -822,23 +1081,17 @@
         function draw() {
             ctx.clearRect(0, 0, width, height);
 
-            // 1. スクロールする背景ライン（スピード感の演出）
             drawScrollingGuides();
-
-            // 2. 障害物・アイテムの描画
             entities.forEach(e => drawEntity(e));
 
-            // 3. トイレットペーパー本体（軌跡）の描画
             if (gameState !== 'GAMEOVER') {
                 drawPaperRibbon();
             } else if (tearPoint) {
                 drawTornPaper();
             }
 
-            // 4. 上部のトイレットペーパーロール（ホルダー付き）の描画
             drawPaperRoll();
 
-            // 5. パーティクル（ちぎれた紙片）描画
             particles.forEach(p => {
                 ctx.save();
                 ctx.translate(p.x, p.y);
@@ -851,7 +1104,6 @@
                 ctx.restore();
             });
 
-            // 6. フローティングテキスト描画
             floatingTexts.forEach(ft => {
                 ctx.save();
                 ctx.globalAlpha = Math.max(0, ft.life);
@@ -884,12 +1136,9 @@
         function drawPaperRibbon() {
             if (paper.trail.length < 2) return;
             const halfW = paper.width / 2;
-
-            // 耐久度に応じた危険色ブレンド
             const dangerRatio = Math.max(0, (55 - durability) / 55);
 
             ctx.save();
-            // 紙の影
             ctx.beginPath();
             for (let i = 0; i < paper.trail.length; i++) {
                 const pt = paper.trail[i];
@@ -904,14 +1153,12 @@
             ctx.fillStyle = 'rgba(15, 23, 42, 0.08)';
             ctx.fill();
 
-            // 紙の本体パス
             ctx.beginPath();
             for (let i = 0; i < paper.trail.length; i++) {
                 const pt = paper.trail[i];
                 if (i === 0) ctx.moveTo(pt.x - halfW, pt.y);
                 else ctx.lineTo(pt.x - halfW, pt.y);
             }
-            // 先端はギザギザ（ミシン目カット風）にする
             const tip = paper.trail[paper.trail.length - 1];
             const teeth = 5;
             for (let t = 0; t <= teeth; t++) {
@@ -925,7 +1172,6 @@
             }
             ctx.closePath();
 
-            // 紙の色（通常は真っ白、耐久低下で赤みがかる）
             const r = 255;
             const g = Math.round(255 - dangerRatio * 145);
             const b = Math.round(255 - dangerRatio * 145);
@@ -936,7 +1182,6 @@
             ctx.strokeStyle = dangerRatio > 0.4 ? '#f43f5e' : '#cbd5e1';
             ctx.stroke();
 
-            // ミシン目（点線）の描画
             ctx.save();
             ctx.strokeStyle = dangerRatio > 0.4 ? 'rgba(244, 63, 94, 0.5)' : 'rgba(148, 163, 184, 0.55)';
             ctx.lineWidth = 1.5;
@@ -951,7 +1196,6 @@
             }
             ctx.restore();
 
-            // 先端の操作つまみガイド（指を置く目印）
             ctx.beginPath();
             ctx.arc(tip.x, tip.y - 6, 7, 0, Math.PI * 2);
             ctx.fillStyle = dangerRatio > 0.4 ? 'rgba(244, 63, 94, 0.25)' : 'rgba(14, 165, 233, 0.22)';
@@ -961,7 +1205,6 @@
         }
 
         function drawTornPaper() {
-            // ちぎれた後の上側残骸を短く描画
             const halfW = paper.width / 2;
             const topPt = paper.trail[0];
             if (!topPt) return;
@@ -991,7 +1234,6 @@
 
             ctx.save();
 
-            // 壁掛けホルダーの金属アーム
             ctx.strokeStyle = '#94a3b8';
             ctx.lineWidth = 6;
             ctx.lineCap = 'round';
@@ -1002,13 +1244,11 @@
             ctx.lineTo(cx + rollWidth / 2 + 12, cy - 26);
             ctx.stroke();
 
-            // ロール本体の影
             ctx.fillStyle = 'rgba(15, 23, 42, 0.1)';
             ctx.beginPath();
             ctx.roundRect(cx - rollWidth / 2 + 3, cy - r + 5, rollWidth, r * 2, 10);
             ctx.fill();
 
-            // ロール本体（白い円筒）
             const grad = ctx.createLinearGradient(0, cy - r, 0, cy + r);
             grad.addColorStop(0, '#e2e8f0');
             grad.addColorStop(0.25, '#ffffff');
@@ -1023,7 +1263,6 @@
             ctx.fill();
             ctx.stroke();
 
-            // 回転するエンボス模様（ロールが回っている視覚効果）
             ctx.save();
             ctx.beginPath();
             ctx.roundRect(cx - rollWidth / 2, cy - r, rollWidth, r * 2, 8);
@@ -1042,7 +1281,6 @@
             }
             ctx.restore();
 
-            // 右側面の渦巻き＆茶色い紙芯
             const sideX = cx + rollWidth / 2;
             ctx.fillStyle = '#f1f5f9';
             ctx.strokeStyle = '#94a3b8';
@@ -1052,7 +1290,6 @@
             ctx.fill();
             ctx.stroke();
 
-            // 茶色い芯
             ctx.fillStyle = '#b45309';
             ctx.beginPath();
             ctx.ellipse(sideX, cy, 4.5, 11, 0, 0, Math.PI * 2);
@@ -1066,7 +1303,6 @@
             ctx.translate(e.x, e.y);
 
             if (e.type === 'puddle') {
-                // 水たまり
                 const scaleX = 1 + Math.sin(e.wobble) * 0.06;
                 const scaleY = 1 + Math.cos(e.wobble) * 0.06;
                 ctx.scale(scaleX, scaleY);
@@ -1079,7 +1315,6 @@
                 ctx.fill();
                 ctx.stroke();
 
-                // 水面のハイライト
                 ctx.fillStyle = 'rgba(255, 255, 255, 0.75)';
                 ctx.beginPath();
                 ctx.ellipse(-e.radius * 0.3, -e.radius * 0.3, e.radius * 0.28, e.radius * 0.14, -0.5, 0, Math.PI * 2);
@@ -1091,11 +1326,9 @@
                 ctx.fillText('みず', 0, 4);
 
             } else if (e.type === 'scissors') {
-                // ハサミ（刃が開閉するアニメーション）
                 const openAngle = 0.22 + Math.abs(Math.sin(e.snipPhase)) * 0.35;
                 ctx.rotate(-Math.PI / 2);
 
-                // 刃1
                 ctx.save();
                 ctx.rotate(openAngle);
                 ctx.fillStyle = '#cbd5e1';
@@ -1110,7 +1343,6 @@
                 ctx.stroke();
                 ctx.restore();
 
-                // 刃2
                 ctx.save();
                 ctx.rotate(-openAngle);
                 ctx.fillStyle = '#94a3b8';
@@ -1125,7 +1357,6 @@
                 ctx.stroke();
                 ctx.restore();
 
-                // 赤い持ち手リング
                 ctx.strokeStyle = '#ef4444';
                 ctx.lineWidth = 4;
                 ctx.beginPath();
@@ -1136,11 +1367,9 @@
                 ctx.stroke();
 
             } else if (e.type === 'catpaw') {
-                // 猫の手（アーム＋肉球）
                 const dir = e.fromLeft ? 1 : -1;
                 ctx.scale(dir, 1);
 
-                // 腕部分
                 ctx.fillStyle = '#fef3c7';
                 ctx.strokeStyle = '#d97706';
                 ctx.lineWidth = 2.5;
@@ -1149,13 +1378,11 @@
                 ctx.fill();
                 ctx.stroke();
 
-                // トラ猫のしま模様
                 ctx.fillStyle = '#f59e0b';
                 for (let s = -140; s <= -35; s += 35) {
                     ctx.fillRect(s, -15, 10, 12);
                 }
 
-                // ピンクの肉球
                 ctx.fillStyle = '#fb7185';
                 ctx.beginPath();
                 ctx.arc(0, 0, 7, 0, Math.PI * 2);
@@ -1167,10 +1394,8 @@
                 });
 
             } else if (e.type === 'fan') {
-                // 扇風機＋風エフェクト
                 const dir = e.blowRight ? 1 : -1;
 
-                // 風の流線
                 ctx.strokeStyle = 'rgba(56, 189, 248, 0.55)';
                 ctx.lineWidth = 2;
                 ctx.setLineDash([8, 8]);
@@ -1182,7 +1407,6 @@
                 }
                 ctx.setLineDash([]);
 
-                // 扇風機本体
                 ctx.fillStyle = '#e0f2fe';
                 ctx.strokeStyle = '#0284c7';
                 ctx.lineWidth = 2.5;
@@ -1191,7 +1415,6 @@
                 ctx.fill();
                 ctx.stroke();
 
-                // 回転する羽根
                 ctx.save();
                 ctx.rotate(e.bladeAngle);
                 ctx.fillStyle = '#38bdf8';
@@ -1204,7 +1427,6 @@
                 ctx.restore();
 
             } else if (e.type === 'repair') {
-                // 耐久回復ロールアイテム
                 const scale = 1 + Math.sin(e.bob) * 0.08;
                 ctx.scale(scale, scale);
 
@@ -1216,7 +1438,6 @@
                 ctx.fill();
                 ctx.stroke();
 
-                // ミニロールアイコン
                 ctx.fillStyle = '#ffffff';
                 ctx.strokeStyle = '#059669';
                 ctx.lineWidth = 1.8;
@@ -1231,7 +1452,6 @@
                 ctx.fillText('回復', 0, 16);
 
             } else if (e.type === 'gold') {
-                // 黄金のペーパーアイテム
                 const scale = 1 + Math.sin(e.bob) * 0.1;
                 ctx.scale(scale, scale);
 
@@ -1260,7 +1480,6 @@
             ctx.restore();
         }
 
-        // --- メインアニメーションループ ---
         function gameLoop(timestamp) {
             if (!lastTime) lastTime = timestamp;
             const dt = Math.min(0.05, (timestamp - lastTime) / 1000);
@@ -1272,7 +1491,7 @@
             requestAnimationFrame(gameLoop);
         }
 
-        // --- タッチ＆マウス操作イベント ---
+        // --- タッチ＆マウス操作 ---
         function handlePointerDown(e) {
             if (gameState !== 'PLAYING') return;
             sound.init();
@@ -1287,7 +1506,6 @@
             const clientX = e.touches ? e.touches[0].clientX : e.clientX;
             const deltaX = clientX - input.lastPointerX;
             input.lastPointerX = clientX;
-            // 指の移動量に合わせてターゲット位置を移動（1.15倍の感度で快適操作）
             paper.targetX += deltaX * 1.15;
         }
 
@@ -1304,7 +1522,6 @@
         window.addEventListener('mousemove', handlePointerMove);
         window.addEventListener('mouseup', handlePointerUp);
 
-        // PCキーボード操作対応
         window.addEventListener('keydown', (e) => {
             if (e.key === 'ArrowLeft' || e.key === 'a' || e.key === 'A') input.leftPressed = true;
             if (e.key === 'ArrowRight' || e.key === 'd' || e.key === 'D') input.rightPressed = true;
@@ -1314,7 +1531,7 @@
             if (e.key === 'ArrowRight' || e.key === 'd' || e.key === 'D') input.rightPressed = false;
         });
 
-        // ボタンイベント
+        // --- ボタンイベント ---
         startBtn.addEventListener('click', startGame);
         retryBtn.addEventListener('click', startGame);
 
@@ -1325,25 +1542,43 @@
             soundOffIcon.classList.toggle('hidden', !isMuted);
         });
 
+        document.querySelectorAll('[data-reset-trigger]').forEach(btn => {
+            btn.addEventListener('click', () => {
+                resetConfirmModal.classList.remove('hidden');
+            });
+        });
+
+        cancelResetBtn.addEventListener('click', () => {
+            resetConfirmModal.classList.add('hidden');
+        });
+
+        confirmResetBtn.addEventListener('click', () => {
+            lastRecordedEntryId = null;
+            clearRanking();
+            resetConfirmModal.classList.add('hidden');
+            showToast('TOP 5 ランキングをリセットしました');
+        });
+
         shareBtn.addEventListener('click', () => {
-            const shareText = `🧻 トイレットペーパー・ロングランで【${distance.toFixed(1)}m】伸ばしました！（ベスト: ${bestScore.toFixed(1)}m） #トイレットペーパーゲーム`;
+            const roundedDist = Math.round(distance * 10) / 10;
+            const shareText = `🧻 トイレットペーパー・ロングランで【${roundedDist.toFixed(1)}m】伸ばしました！（1位記録: ${getTopScore().toFixed(1)}m） #トイレットペーパーゲーム`;
             const tempInput = document.createElement('textarea');
             tempInput.value = shareText;
             document.body.appendChild(tempInput);
             tempInput.select();
             try {
                 document.execCommand('copy');
-                toastMsg.classList.remove('hidden');
-                setTimeout(() => toastMsg.classList.add('hidden'), 2200);
+                showToast('クリップボードにコピーしました！');
             } catch (err) {
                 console.error('Copy failed', err);
+                showToast('コピーできませんでした');
             }
             document.body.removeChild(tempInput);
         });
 
-        // 起動処理
         window.addEventListener('resize', resizeCanvas);
         window.onload = function () {
+            renderRankingBoards();
             updateBestScoreUI();
             resizeCanvas();
             requestAnimationFrame(gameLoop);
